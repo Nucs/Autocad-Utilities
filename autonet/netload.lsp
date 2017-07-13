@@ -1,0 +1,1 @@
+(command "_netload" "C:/Users/Eli/Documents/visual studio 2017/Projects/autonet/autonet/bin/Debug/autonet.dll")
