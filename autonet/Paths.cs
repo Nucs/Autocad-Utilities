@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace Common {
         private static Task _cacheprogress;
 #pragma warning restore CS0169 // The field 'Paths._cacheprogress' is never used
 
-        private static readonly string _location = Assembly.GetEntryAssembly().Location;
+        private static readonly string _location = Process.GetCurrentProcess().MainModule.FileName;
 
         /// <summary>
         ///     Gives the path to windows dir, most likely to be 'C:/Windows/'
@@ -24,11 +25,20 @@ namespace Common {
         ///     The path to the entry exe.
         /// </summary>
         public static FileInfo ExecutingExe => new FileInfo(_location);
-
+        /// <summary>
+        ///     The config dir inside user profile.
+        /// </summary>
+        public static DirectoryInfo ConfigDirectory => new DirectoryInfo(Path.Combine(Environment.ExpandEnvironmentVariables("%USERPROFILE%"), "autoload/"));
+        /// <summary>
+        ///     The config file inside user profile.
+        /// </summary>
+        public static FileInfo ConfigFile => new FileInfo(Path.Combine(ConfigDirectory.FullName, Environment.MachineName + ".json"));
         /// <summary>
         ///     The path to the entry exe's directory.
         /// </summary>
         public static DirectoryInfo ExecutingDirectory => ExecutingExe.Directory;
+
+        public static DirectoryInfo CurrentDirectory => new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
 
         /// <summary>
         ///     Checks the ability to create and write to a file in the supplied directory.

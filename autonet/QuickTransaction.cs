@@ -239,5 +239,12 @@ namespace autonet {
         public Editor.CommandResult CommandAsync(params object[] parameter) {
             return Editor.CommandAsync(parameter);
         }
+
+        /// <summary>
+        ///     Sends a string command to the commandline, dont forget to add space for it to execute!
+        /// </summary>
+        public void StringCommand(string command) {
+            Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.SendStringToExecute(command,true,false,true);
+        }
     }
 }

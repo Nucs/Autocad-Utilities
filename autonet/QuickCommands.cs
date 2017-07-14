@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using autonet.Extensions;
+using autonet.lsp;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -20,7 +21,6 @@ namespace autonet {
                 var psRes = tr.GetSelection(psOpts);
                 if (psRes.Status != PromptStatus.OK)
                     return;
-                
 
                 if (tr.LayerTable.Has("EL-LT-CABL-160")) {
                     var lyr = tr.LayerTable["EL-LT-CABL-160"];
@@ -238,7 +238,15 @@ namespace autonet {
                 var psRes = tr.GetSelection(psOpts);
                 if (psRes.Status != PromptStatus.OK)
                     return;
-                tr.Command("_.pedit", "_m", psRes.Value, "", "_j", "", "_j", "", "_j", "", "");
+                var sel = psRes.Value.GetObjectIds().Select(o => o.GetObject(tr)).ToList();
+                var circles = sel.TakeoutWhereType<Entity,Circle>().ToSelectionSet();
+                var elipses = sel.TakeoutWhereType<Entity, Ellipse>().ToSelectionSet();
+                if (sel.Count>0)
+                    tr.Command("_.pedit", "_m", sel.ToSelectionSet(), "", "_j", "", "_j", "", "_j", "", "");
+                tr.SetImpliedSelection(circles);
+                if (circles.Count>0)
+                        tr.Command("CircleToPoly", circles);
+
                 tr.Commit();
             }
         }
