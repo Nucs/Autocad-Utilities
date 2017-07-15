@@ -6,20 +6,21 @@ using Newtonsoft.Json.Serialization;
 namespace LispDebugAssistant {
     public class AppConfig : JsonConfiguration {
         public override string FileName { get; } = Path.Combine(Paths.ConfigDirectory.FullName, "lspdbg.config.json");
+
         /// <summary>
         ///     current folder listening to
         /// </summary>
-        public string CurrentFolder { get; set; }
+        public string CurrentFolder { get; set; } = null;
 
         /// <summary>
         ///     True: lspdbg will launch with autodesk.
         /// </summary>
-        public bool AutoLaunch { get; set; } = true;
+        public bool AutoLaunch { get; set; } = false;
 
         /// <summary>
         ///     Watcher will be turned on automatically.
         /// </summary>
-        public bool AutoStart { get; set; } = true;
+        public bool AutoStart { get; set; } = false;
 
         /// <summary>
         ///     The program will start minimized.
