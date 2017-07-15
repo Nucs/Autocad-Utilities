@@ -11,10 +11,20 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "autonet.menu", "autonet.men
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "commandline", "commandline\commandline.csproj", "{5C9C2142-A68C-4A11-9AC8-FB0E9822AC0B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LispDebugAssistant", "LispDebugAssistant\LispDebugAssistant.csproj", "{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "autonet.shared", "autonet.shared\autonet.shared.shproj", "{C505A428-7E71-489C-8BF3-E17DABF063CE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{736854AD-947D-4C53-8BA5-065FBCE091BF}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		autonet.shared\autonet.shared.projitems*{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}*SharedItemsImports = 4
+		Newtonsoft.Json\Newtonsoft.Json.projitems*{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}*SharedItemsImports = 4
+		autonet.shared\autonet.shared.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
 		Newtonsoft.Json\Newtonsoft.Json.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
 		Newtonsoft.Json\Newtonsoft.Json.projitems*{7f70dba0-49f6-4585-8af4-a89a0c026c7f}*SharedItemsImports = 13
+		autonet.shared\autonet.shared.projitems*{c505a428-7e71-489c-8bf3-e17dabf063ce}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,8 +43,16 @@ Global
 		{5C9C2142-A68C-4A11-9AC8-FB0E9822AC0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C9C2142-A68C-4A11-9AC8-FB0E9822AC0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C9C2142-A68C-4A11-9AC8-FB0E9822AC0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7F70DBA0-49F6-4585-8AF4-A89A0C026C7F} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
+		{C505A428-7E71-489C-8BF3-E17DABF063CE} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
 	EndGlobalSection
 EndGlobal

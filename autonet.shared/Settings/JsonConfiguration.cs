@@ -60,10 +60,13 @@ namespace autonet {
                 if (filename == "##DEFAULT##")
                     filename = (string) intype.GetProperty("FileName", typeof(string)).GetMethod.Invoke(o, null);
 
-                if (filename.Contains("/") || filename.Contains("\\"))
+                if (filename.Contains("/") || filename.Contains("\\")) {
                     filename = Path.Combine(Paths.NormalizePath(Path.GetDirectoryName(filename)), Path.GetFileName(filename));
-                if (Directory.Exists(Path.GetDirectoryName(filename)) == false)
-                    Directory.CreateDirectory(Path.GetDirectoryName(filename));
+                    if (Directory.Exists(Path.GetDirectoryName(filename)) == false)
+                        Directory.CreateDirectory(Path.GetDirectoryName(filename));
+                } else {
+                    filename = Paths.CombineToExecutingBase(filename).FullName;
+                }
                 lock (o) {
                     o.BeforeSave();
                     File.WriteAllText(filename, JsonConvert.SerializeObject(o, intype, _settings));

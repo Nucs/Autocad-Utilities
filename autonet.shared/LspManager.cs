@@ -27,7 +27,7 @@ namespace autonet.lsp {
                 var res = GetResource(name, version);
                 var file = @base.SubFile(res.FileName).FullName.Replace('\\', '/');
                 File.WriteAllText(file, res.Content, Encoding.UTF8);
-                App.DocumentManager.MdiActiveDocument.SendStringToExecute($"(load \"{file}\") ", true, false, true);
+                LoadFile(file);
                 return true;
             } catch (Exception e) {
                 Debug.WriteLine(e);
@@ -69,6 +69,18 @@ namespace autonet.lsp {
 
             using (var sr = new StreamReader(asm.GetManifestResourceStream(target)))
                 return new ResourceInfo() {FileName = target, Content = sr.ReadToEnd()};
+        }
+
+        /// <summary>
+        /// sends a Load command into autocad!
+        /// </summary>
+        /// <param name="fullpath"></param>
+        public static void LoadFile(string fullpath) {
+            try {
+                App.DocumentManager.MdiActiveDocument.SendStringToExecute($"(load \"{fullpath.Replace("\\", "/")}\") ", true, false, true);
+            } catch (Exception e) {
+                throw new Exception($"Failed loading file {fullpath} onto autocad", e);
+            }
         }
 
         public class ResourceInfo {
