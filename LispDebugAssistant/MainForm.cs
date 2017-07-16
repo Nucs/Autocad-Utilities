@@ -23,7 +23,7 @@ namespace LispDebugAssistant {
         public LspManager Manager { get; } = new LspManager();
         public static AppConfig Config { get; } = JsonConfiguration.Load<AppConfig>();
         public TrayIcon TIcon { get; private set; }
-        
+
 
         public MainForm() {
             InitializeComponent();
@@ -41,22 +41,24 @@ namespace LispDebugAssistant {
 
             Main._signal.Set();
         }
+
         void DragAndDropEnter(object sender, DragEventArgs e) {
             if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
         }
 
         void DragAndDrop(object sender, DragEventArgs e) {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            string[] files = (string[]) e.Data.GetData(DataFormats.FileDrop);
             foreach (string file in files.Where(File.Exists))
                 Manager?.Watch(file);
         }
+
         private void ManagerOnStoppedWatchingFile(LspFile lspFile, DateTime dateTime) {
             GUI.RemoveListeningTo(lspFile.FileName);
             lock (Config) {
                 LspFile[] tmp;
-                lock (Manager.LockRoot) 
+                lock (Manager.LockRoot)
                     tmp = Manager.Files.ToArray();
-                
+
                 Config.Files = tmp.Select(ls => ls.FullPath).ToArray();
                 Config.Save();
             }
@@ -66,9 +68,9 @@ namespace LispDebugAssistant {
             GUI.AddListeningTo(lspFile.FileName);
             lock (Config) {
                 LspFile[] tmp;
-                lock (Manager.LockRoot) 
+                lock (Manager.LockRoot)
                     tmp = Manager.Files.ToArray();
-                
+
                 Config.Files = tmp.Select(ls => ls.FullPath).ToArray();
                 Config.Save();
             }
@@ -96,7 +98,8 @@ namespace LispDebugAssistant {
                 new MenuItem("Reload Selected", (sender, args) => {
                     var t = lstWatching.SelectedItems
                         .Cast<object>()
-                        .Select(o => Manager.FindLspFile(o.ToString())).Where(l=>l!=null)
+                        .Select(o => Manager.FindLspFile(o.ToString()))
+                        .Where(l => l != null)
                         .ToArray();
                     foreach (var file in t) {
                         file.Reload();
@@ -105,14 +108,31 @@ namespace LispDebugAssistant {
                 new MenuItem("Remove Selected", (sender, args) => {
                     var t = lstWatching.SelectedItems
                         .Cast<object>()
-                        .Select(o => Manager.FindLspFile(o.ToString())).Where(l=>l!=null)
+                        .Select(o => Manager.FindLspFile(o.ToString()))
+                        .Where(l => l != null)
                         .ToArray();
                     foreach (var file in t) {
                         file.Remove();
                     }
                 }),
+                new MenuItem("Sort", (sender, args) => {
+                    __sort_switch = !__sort_switch;
+                    lock (lstWatching.Items) {
+                        if (__sort_switch) {
+                            var l = lstWatching.Items.Cast<object>().Select(o => o.ToString()).OrderBy(s => s).ToArray();
+                            lstWatching.Items.Clear();
+                            lstWatching.Items.AddRange(l);
+                        } else {
+                            var l = lstWatching.Items.Cast<object>().Select(o => o.ToString()).OrderByDescending(s => s).ToArray();
+                            lstWatching.Items.Clear();
+                            lstWatching.Items.AddRange(l);
+                        }
+                    }
+                })
             });
         }
+
+        private bool __sort_switch = false;
 
         private void MainForm_Load(object sender, EventArgs e) {
             GUI.SetStatus("Initial loading...");
@@ -130,7 +150,7 @@ namespace LispDebugAssistant {
             TIcon.Show();
             TIcon.ShowBalloonTipFor(5000, "Lisp Debug Assistant", "Letting you know im running!", ToolTipIcon.Info);
 
-            foreach (var file in Config.Files ??new string[0] ) {
+            foreach (var file in Config.Files ?? new string[0]) {
                 Manager.Watch(file);
             }
 
@@ -144,61 +164,45 @@ namespace LispDebugAssistant {
 
         /// <param name="setto">True=on, false=off, null=toggle</param>
         private void OnOffSwitch(bool? setto = null) {
-            lock (this) {
-                if (setto == true)
-                    goto _on;
-                else if (setto == false)
-                    goto _off;
-                else if (IsMonitoring) {
-                    goto _off;
-                } else {
-                    goto _on;
-                }
-
-                _off:
-                //turn off:
+            void Off() {
                 GUI.StateTurnOff();
                 Manager.Pause();
                 GUI.SetStatus("Paused Successfully.");
-                return;
+            }
 
-                _on:
-                //turn on:
+            void On() {
                 GUI.StateTurnOn();
                 Manager.Resume();
                 GUI.SetStatus("Resumed Successfully.");
                 if (Config.LoadAllOnTurnOn)
                     ReloadAll();
-                return;
             }
-        }
 
-        private void _bindWatcher(LspFileWatcher w) {
-            w.FileAdded += (filename, when) => { GUI.AddListeningTo(filename); };
-            w.FileDeleted += (filename, when) => { GUI.RemoveListeningTo(filename); };
-
-            w.FileChanged += (filename, when) => {
-                LspLoader.LoadFile(filename);
-                GUI.HasReloaded(filename);
-            };
-
-
-            SystemSounds.Asterisk.Play();
+            lock (this) {
+                if (setto == true)
+                    On();
+                else if (setto == false)
+                    Off();
+                else if (IsMonitoring) {
+                    Off();
+                } else {
+                    On();
+                }
+            }
         }
 
         private void btnSelectFolder_Click(object sender, EventArgs e) {
             if (Control.ModifierKeys == Keys.Shift) {
                 var tmp = Path.ChangeExtension(Paths.MarkForDeletion(Path.GetTempFileName()), ".txt");
                 var txt = "";
-                lock (Manager.LockRoot) 
+                lock (Manager.LockRoot)
                     txt = string.Join(Environment.NewLine, Manager.Files.ToArray().Select(f => f.FullPath));
-                
+
                 File.WriteAllText(tmp, txt);
                 Process.Start(tmp);
                 return;
             }
             lock (this) {
-                _reselect:
                 CommonOpenFileDialog dialog = new CommonOpenFileDialog {
                     RestoreDirectory = true,
                     EnsurePathExists = true,
@@ -206,7 +210,7 @@ namespace LispDebugAssistant {
                     ShowPlacesList = true,
                     Multiselect = true,
                     ShowHiddenItems = true,
-                    Filters = { new CommonFileDialogFilter("*.lsp", "*.lsp"), new CommonFileDialogFilter("All Files", "*") },
+                    Filters = {new CommonFileDialogFilter("*.lsp", "*.lsp"), new CommonFileDialogFilter("All Files", "*")},
                     NavigateToShortcut = true
                 };
                 if (dialog.ShowDialog() != CommonFileDialogResult.Ok)
@@ -214,7 +218,6 @@ namespace LispDebugAssistant {
 
                 foreach (var fn in dialog.FileNames)
                     Manager.Watch(fn);
-
             }
         }
 
@@ -244,7 +247,7 @@ namespace LispDebugAssistant {
 
         private void btnReload_Click(object sender, EventArgs e) {
             if (MessageBox.Show("Are you sure you want to reload all?", "Reloading...", MessageBoxButtons.YesNo, MessageBoxIcon.Asterisk) == DialogResult.Yes)
-                ReloadAll();
+                Manager.ReloadAll(MessageBox.Show("Include references to selected files?", "Dilema", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
         }
 
         private void MainForm_Shown(object sender, EventArgs e) {

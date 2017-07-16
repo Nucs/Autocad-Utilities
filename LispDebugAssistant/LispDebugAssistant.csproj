@@ -117,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppConfig.cs" />
+    <Compile Include="LspFile.cs" />
     <Compile Include="LspFileWatcher.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="LspManager.cs" />
@@ -134,6 +135,7 @@
     <Compile Include="SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ThrowlessException.cs" />
     <Compile Include="TrayIcon.cs" />
   </ItemGroup>
   <ItemGroup>
