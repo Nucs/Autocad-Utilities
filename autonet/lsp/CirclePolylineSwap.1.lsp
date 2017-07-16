@@ -11,63 +11,6 @@
 ;;  See additional notes above each command's definition.
 ;;  Kent Cooper, May 2011
 
-
-;;  C2P
-;;  To convert a selected Circle to a two-equal-arc-segment closed zero-
-;;  width Polyline circle [Donut w/ equal inside & outside diameters],
-;;  which can then be modified as desired [given width, etc.], since Pedit
-;;  will not accept selection of a Circle.
-;
-(defun C:CC (csel / *error* cmde cir cdata cctr crad cextdir pdata)
-  (vl-load-com)
-  (defun *error* (errmsg)
-    (if (not (wcmatch errmsg "Function cancelled,quit / exit abort,console break"))
-      (princ (strcat "\nError: " errmsg))
-    ); end if
-    (command "_.undo" "_end")
-    (setvar 'cmdecho cmde)
-  ); end defun - *error*
-  (setq cmde (getvar 'cmdecho))
-  (setvar 'cmdecho 0)
-  (command "_.undo" "_begin")
-  (prompt "\nTo convert a Circle to its Polyline equivalent,")
-  (setq csel (ssget "I" '((0 . "CIRCLE"))))
-  (setq
-    cir (ssname csel 0); Circle entity name
-    cdata (entget cir); entity data
-    cctr (cdr (assoc 10 cdata)); center point, OCS for Circle & LWPolyline w/ WCS 0,0,0 as origin
-    crad (cdr (assoc 40 cdata)); radius
-    cextdir (assoc 210 cdata); extrusion direction
-  ); end setq
-  (setq 
-    pdata (vl-remove-if-not '(lambda (x) (member (car x) '(67 410 8 62 6 48 370 39))) cdata)
-      ; start Polyline entity data list -- remove Circle-specific entries from
-      ; Circle's entity data, and extrusion direction; 62 Color, 6 Linetype, 48
-      ; LTScale, 370 LWeight, 39 Thickness present only if not default/bylayer
-    pdata
-      (append ; add Polyline-specific entries
-        '((0 . "LWPOLYLINE") (100 . "AcDbEntity"))
-        pdata ; remaining non-entity-type-specific entries
-        '((100 . "AcDbPolyline") (90 . 2) (70 . 129) (43 . 0.0))
-          ; 90 = # of vertices, 70 1 bit = closed 128 bit = ltype gen. on, 43 = global width
-        (list
-          (cons 38 (caddr cctr)); elevation in OCS above WCS origin [Z of Circle center]
-          (cons 10 (list (- (car cctr) crad) (cadr cctr))); vertex 1
-          '(40 . 0.0) '(41 . 0.0) '(42 . 1); 0 width, semi-circle bulge factors
-          (cons 10 (list (+ (car cctr) crad) (cadr cctr))); vertex 2
-          '(40 . 0.0) '(41 . 0.0) '(42 . 1)
-          cextdir ; extr. dir. at end [if in middle, reverts to (210 0.0 0.0 1.0) in (entmake)]
-        ); end list
-      ); end append & pdata
-  ); end setq
-  (entmake pdata)
-  (entdel cir); [remove or comment out this line to retain selected Circle]
-  (command "_.undo" "_end")
-  (setvar 'cmdecho cmde)
-  (princ)
-); end defun
-
-
 ;;  C2P
 ;;  To convert a selected Circle to a two-equal-arc-segment closed zero-
 ;;  width Polyline circle [Donut w/ equal inside & outside diameters],
