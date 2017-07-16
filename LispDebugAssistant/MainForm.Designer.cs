@@ -55,7 +55,7 @@
             this.btnSelectFolder.Name = "btnSelectFolder";
             this.btnSelectFolder.Size = new System.Drawing.Size(132, 23);
             this.btnSelectFolder.TabIndex = 7;
-            this.btnSelectFolder.Text = "Select Folder";
+            this.btnSelectFolder.Text = "Select Files";
             this.btnSelectFolder.UseVisualStyleBackColor = true;
             this.btnSelectFolder.Click += new System.EventHandler(this.btnSelectFolder_Click);
             // 

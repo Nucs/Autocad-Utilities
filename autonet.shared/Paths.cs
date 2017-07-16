@@ -25,14 +25,17 @@ namespace Common {
         ///     The path to the entry exe.
         /// </summary>
         public static FileInfo ExecutingExe => new FileInfo(_location);
+
         /// <summary>
         ///     The config dir inside user profile.
         /// </summary>
         public static DirectoryInfo ConfigDirectory => new DirectoryInfo(Path.Combine(Environment.ExpandEnvironmentVariables("%USERPROFILE%"), "autoload/"));
+
         /// <summary>
         ///     The config file inside user profile.
         /// </summary>
         public static FileInfo ConfigFile => new FileInfo(Path.Combine(ConfigDirectory.FullName, Environment.MachineName + ".json"));
+
         /// <summary>
         ///     The path to the entry exe's directory.
         /// </summary>
@@ -60,8 +63,7 @@ namespace Common {
                         File.Delete(fullPath);
                         success = true;
                     }
-                }
-                catch (Exception) {
+                } catch (Exception) {
                     success = false;
                 }
             return success;
@@ -100,6 +102,14 @@ namespace Common {
         }
 
         /// <summary>
+        ///     Compares two FileSystemInfos the right way.
+        /// </summary>
+        /// <returns></returns>
+        public static bool CompareTo(string fi, string fi2) {
+            return NormalizePath(fi).Equals(NormalizePath(fi2), StringComparison.InvariantCulture);
+        }
+
+        /// <summary>
         ///     Normalizes path to prepare for comparison or storage
         /// </summary>
         public static string NormalizePath(string path) {
@@ -110,8 +120,7 @@ namespace Common {
                 if (Uri.IsWellFormedUriString(path, UriKind.RelativeOrAbsolute))
                     try {
                         path = Path.GetFullPath(new Uri(path).LocalPath);
-                    }
-                    catch { }
+                    } catch { }
             //is root, fix.
             if ((path.Length == 2) && (path[1] == ':') && char.IsLetter(path[0]) && char.IsUpper(path[0]))
                 path = path + "\\";
@@ -119,9 +128,54 @@ namespace Common {
             return path;
         }
 
+        ///
+        /// Consts defined in WINBASE.H
+        ///
+        private enum MoveFileFlags {
+            MOVEFILE_REPLACE_EXISTING = 1,
+            MOVEFILE_COPY_ALLOWED = 2,
+            MOVEFILE_DELAY_UNTIL_REBOOT = 4,
+            MOVEFILE_WRITE_THROUGH = 8
+        }
+
+
+        /// <summary>
+        /// Marks the file for deletion during next system reboot
+        /// </summary>
+        /// <param name="lpExistingFileName">The current name of the file or directory on the local computer.</param>
+        /// <param name="lpNewFileName">The new name of the file or directory on the local computer.</param>
+        /// <param name="dwFlags">MoveFileFlags</param>
+        /// <returns>bool</returns>
+        /// <remarks>http://msdn.microsoft.com/en-us/library/aa365240(VS.85).aspx</remarks>
+        [System.Runtime.InteropServices.DllImportAttribute("kernel32.dll", EntryPoint = "MoveFileEx")]
+        private static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, MoveFileFlags dwFlags);
+
+        public static FileInfo MarkForDeletion(FileInfo file) {
+            MarkForDeletion(file.FullName);
+            return file;
+        }
+
+        public static string MarkForDeletion(string filename) {
+            if (File.Exists(filename) == false)
+                return filename;
+            //Usage for marking the file to delete on reboot
+            MoveFileEx(filename, null, MoveFileFlags.MOVEFILE_DELAY_UNTIL_REBOOT);
+            return filename;
+        }
+
         /// <summary>
         ///     Removes or replaces all illegal characters for path in a string.
         /// </summary>
         public static string RemoveIllegalPathCharacters(string filename, string replacewith = "") => string.Join(replacewith, filename.Split(Path.GetInvalidFileNameChars()));
+
+        public class FilePathEqualityComparer : IEqualityComparer<string> {
+            public bool Equals(string x, string y) {
+                return Paths.CompareTo(x, y);
+            }
+
+            public int GetHashCode(string obj) {
+                return Paths.NormalizePath(obj).GetHashCode();
+            }
+        }
     }
 }

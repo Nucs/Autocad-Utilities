@@ -15,7 +15,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\UtilityExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\FileDialogs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\SafeDictionary.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LspManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LspLoader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Paths.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)QuickTransaction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\ISaveable.cs" />

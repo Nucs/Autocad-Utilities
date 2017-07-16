@@ -10,7 +10,7 @@ namespace LispDebugAssistant {
         /// <summary>
         ///     current folder listening to
         /// </summary>
-        public string CurrentFolder { get; set; } = null;
+        public string[] Files { get; set; } = new string[0];
 
         /// <summary>
         ///     True: lspdbg will launch with autodesk.

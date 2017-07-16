@@ -13,7 +13,7 @@ using App = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 using Exception = System.Exception;
 
 namespace autonet.lsp {
-    public static class LspManager {
+    public static class LspLoader {
         /// <summary>
         ///     Load a lsp file, any version is default.
         /// </summary>

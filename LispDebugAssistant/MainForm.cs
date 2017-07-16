@@ -19,16 +19,76 @@ using nucs.WinForms.Tray;
 
 namespace LispDebugAssistant {
     public partial class MainForm : Form {
-        public bool IsMonitoring { get; set; } = false;
-        public LspFileWatcher CurrentListener { get; private set; }
-        public string CurrentFolder => Config.CurrentFolder;
+        public bool IsMonitoring => !Manager.IsPaused;
+        public LspManager Manager { get; } = new LspManager();
         public static AppConfig Config { get; } = JsonConfiguration.Load<AppConfig>();
         public TrayIcon TIcon { get; private set; }
+        
 
         public MainForm() {
             InitializeComponent();
             InitlstWatchedMenu();
+            Manager.Error += ManagerOnError;
+            Manager.FileChanged += ManagerOnFileChanged;
+            Manager.FileRenamed += ManagerOnFileRenamed;
+            Manager.FileDeleted += ManagerOnFileDeleted;
+            Manager.BeganWatchingFile += ManagerOnBeganWatchingFile;
+            Manager.StoppedWatchingFile += ManagerOnStoppedWatchingFile;
+
+            this.AllowDrop = true;
+            this.DragEnter += new DragEventHandler(DragAndDropEnter);
+            this.DragDrop += new DragEventHandler(DragAndDrop);
+
             Main._signal.Set();
+        }
+        void DragAndDropEnter(object sender, DragEventArgs e) {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
+        }
+
+        void DragAndDrop(object sender, DragEventArgs e) {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            foreach (string file in files.Where(File.Exists))
+                Manager?.Watch(file);
+        }
+        private void ManagerOnStoppedWatchingFile(LspFile lspFile, DateTime dateTime) {
+            GUI.RemoveListeningTo(lspFile.FileName);
+            lock (Config) {
+                LspFile[] tmp;
+                lock (Manager.LockRoot) 
+                    tmp = Manager.Files.ToArray();
+                
+                Config.Files = tmp.Select(ls => ls.FullPath).ToArray();
+                Config.Save();
+            }
+        }
+
+        private void ManagerOnBeganWatchingFile(LspFile lspFile, DateTime dateTime) {
+            GUI.AddListeningTo(lspFile.FileName);
+            lock (Config) {
+                LspFile[] tmp;
+                lock (Manager.LockRoot) 
+                    tmp = Manager.Files.ToArray();
+                
+                Config.Files = tmp.Select(ls => ls.FullPath).ToArray();
+                Config.Save();
+            }
+        }
+
+        private void ManagerOnFileDeleted(LspFile file, DateTime dateTime) {
+            GUI.RemoveListeningTo(file.FileName);
+        }
+
+        private void ManagerOnFileRenamed(string oldFilename, LspFile file, DateTime _) {
+            GUI.FileRenamed(oldFilename, file);
+        }
+
+        private void ManagerOnFileChanged(LspFile file, DateTime dateTime) {
+            GUI.HasReloaded(file.FileName);
+            file.Reload(true);
+        }
+
+        private void ManagerOnError(Exception exception, DateTime dateTime) {
+            GUI.LogException(exception);
         }
 
         private void InitlstWatchedMenu() {
@@ -36,26 +96,25 @@ namespace LispDebugAssistant {
                 new MenuItem("Reload Selected", (sender, args) => {
                     var t = lstWatching.SelectedItems
                         .Cast<object>()
-                        .Select(o => Path.Combine(Paths.ConfigDirectory.FullName, "lsp/" + o.ToString()))
+                        .Select(o => Manager.FindLspFile(o.ToString())).Where(l=>l!=null)
                         .ToArray();
                     foreach (var file in t) {
-                        Reload(file);
+                        file.Reload();
                     }
                 }),
-                /*new MenuItem("Remove Selected", (sender, args) => {
+                new MenuItem("Remove Selected", (sender, args) => {
                     var t = lstWatching.SelectedItems
                         .Cast<object>()
-                        .Select(o => Path.Combine(Paths.ConfigDirectory.FullName, "lsp/" + o.ToString()))
+                        .Select(o => Manager.FindLspFile(o.ToString())).Where(l=>l!=null)
                         .ToArray();
                     foreach (var file in t) {
-                        GUI.RemoveListeningTo(file);
+                        file.Remove();
                     }
-                }),*/
+                }),
             });
         }
 
         private void MainForm_Load(object sender, EventArgs e) {
-            GUI.SetCurrentFolder(CurrentFolder);
             GUI.SetStatus("Initial loading...");
             if (MainForm.Config.AutoStart) {
                 OnOffSwitch(true);
@@ -71,13 +130,13 @@ namespace LispDebugAssistant {
             TIcon.Show();
             TIcon.ShowBalloonTipFor(5000, "Lisp Debug Assistant", "Letting you know im running!", ToolTipIcon.Info);
 
+            foreach (var file in Config.Files ??new string[0] ) {
+                Manager.Watch(file);
+            }
+
             if (Config.LoadAllOnStartup)
                 ReloadAll();
         }
-
-        /*protected override void SetVisibleCore(bool value) {
-            base.SetVisibleCore(!MainForm.Config.StartMinimized && value);
-        }*/
 
         private void btnOnOff_Click(object sender, EventArgs e) {
             OnOffSwitch();
@@ -99,36 +158,15 @@ namespace LispDebugAssistant {
                 _off:
                 //turn off:
                 GUI.StateTurnOff();
-                CurrentListener?.Dispose();
-                CurrentListener = null;
-                IsMonitoring = false;
-                GUI.SetStatus("Turned Off Successfully.");
+                Manager.Pause();
+                GUI.SetStatus("Paused Successfully.");
                 return;
 
                 _on:
                 //turn on:
                 GUI.StateTurnOn();
-                if (CurrentFolder == null || Directory.Exists(CurrentFolder) == false) {
-                    GUI.AddLog("ERROR", $"Could not find selected directory! {(string.IsNullOrEmpty(CurrentFolder) ? "" : $"({CurrentFolder})")}");
-                    GUI.StateTurnOff();
-                    GUI.SetStatus("Failed loading...");
-                    return;
-                }
-                try {
-                    CurrentListener = new LspFileWatcher(CurrentFolder);
-                    _bindWatcher(CurrentListener);
-                    GUI.SetListeningTo(Directory.GetFiles(CurrentFolder, "*.lsp"));
-                } catch (Exception ex) {
-                    GUI.LogException(ex);
-                    if (Debugger.IsAttached)
-                        Debug.WriteLine(ex);
-                    Console.WriteLine(ex);
-                    GUI.StateTurnOff();
-                    GUI.SetStatus("Failed Starting...");
-                    return;
-                }
-                IsMonitoring = true;
-                GUI.SetStatus("Turned On Successfully.");
+                Manager.Resume();
+                GUI.SetStatus("Resumed Successfully.");
                 if (Config.LoadAllOnTurnOn)
                     ReloadAll();
                 return;
@@ -140,7 +178,7 @@ namespace LispDebugAssistant {
             w.FileDeleted += (filename, when) => { GUI.RemoveListeningTo(filename); };
 
             w.FileChanged += (filename, when) => {
-                LspManager.LoadFile(filename);
+                LspLoader.LoadFile(filename);
                 GUI.HasReloaded(filename);
             };
 
@@ -150,41 +188,37 @@ namespace LispDebugAssistant {
 
         private void btnSelectFolder_Click(object sender, EventArgs e) {
             if (Control.ModifierKeys == Keys.Shift) {
-                if (string.IsNullOrEmpty(CurrentFolder) == false) {
-                    Process.Start("explorer.exe", CurrentFolder);
-                }
+                var tmp = Path.ChangeExtension(Paths.MarkForDeletion(Path.GetTempFileName()), ".txt");
+                var txt = "";
+                lock (Manager.LockRoot) 
+                    txt = string.Join(Environment.NewLine, Manager.Files.ToArray().Select(f => f.FullPath));
+                
+                File.WriteAllText(tmp, txt);
+                Process.Start(tmp);
                 return;
             }
             lock (this) {
                 _reselect:
                 CommonOpenFileDialog dialog = new CommonOpenFileDialog {
-                    InitialDirectory = CurrentFolder,
                     RestoreDirectory = true,
                     EnsurePathExists = true,
-                    Title = "Select directory to read all .lsp files from.",
-                    IsFolderPicker = true,
-                    Multiselect = false,
+                    Title = "Select .lsp files from or a single file.",
+                    ShowPlacesList = true,
+                    Multiselect = true,
                     ShowHiddenItems = true,
+                    Filters = { new CommonFileDialogFilter("*.lsp", "*.lsp"), new CommonFileDialogFilter("All Files", "*") },
                     NavigateToShortcut = true
                 };
                 if (dialog.ShowDialog() != CommonFileDialogResult.Ok)
                     return;
-                var d = dialog.FileName;
 
-                Config.CurrentFolder = d;
-                Config.Save();
+                foreach (var fn in dialog.FileNames)
+                    Manager.Watch(fn);
 
-                GUI.SetCurrentFolder(CurrentFolder);
-
-                if (IsMonitoring) {
-                    this.btnOnOff_Click(null, null);
-                    this.btnOnOff_Click(null, null);
-                }
             }
         }
 
         private void btnSettings_Click(object sender, EventArgs e) {
-            //todo should lock *this*?
             new SettingsForm(Config).ShowDialog(this);
         }
 
@@ -200,18 +234,12 @@ namespace LispDebugAssistant {
             path = path.Replace('\\', '/');
             if (File.Exists(path) == false)
                 return;
-            LspManager.LoadFile(path);
+            LspLoader.LoadFile(path);
             GUI.HasReloaded(path);
         }
 
         public void ReloadAll() {
-            var t = lstWatching.Items
-                .Cast<object>()
-                .Select(o => Path.Combine(Paths.ConfigDirectory.FullName, "lsp/" + o.ToString()))
-                .ToArray();
-            foreach (var file in t) {
-                Reload(file);
-            }
+            Manager.ReloadAll(true);
         }
 
         private void btnReload_Click(object sender, EventArgs e) {

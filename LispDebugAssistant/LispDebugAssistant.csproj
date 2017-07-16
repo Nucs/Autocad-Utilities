@@ -119,6 +119,7 @@
     <Compile Include="AppConfig.cs" />
     <Compile Include="LspFileWatcher.cs" />
     <Compile Include="GUI.cs" />
+    <Compile Include="LspManager.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

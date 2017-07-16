@@ -7,19 +7,27 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace LispDebugAssistant {
+    public delegate void FileDeletedEvent(string filename, DateTime when);
+    public delegate void FileAddedEvent(string filename, DateTime when);
+    public delegate void FileChangedEvent(string filename, DateTime when);
+    public delegate void FileRenamedEvent(string old_filename, string new_filename, DateTime when);
+
     public class LspFileWatcher : IDisposable {
         
         public string[] Files => Directory.GetFiles(this.watcher.Path, ".lsp");
 
-        public delegate void FileDeletedEvent(string filename, DateTime when);
-
-        public delegate void FileAddedEvent(string filename, DateTime when);
-
-        public delegate void FileChangedEvent(string filename, DateTime when);
-
         public event FileChangedEvent FileChanged;
         public event FileAddedEvent FileAdded;
         public event FileDeletedEvent FileDeleted;
+        public event FileRenamedEvent FileRenamed;
+
+        /// <summary>
+        ///     Should this watcher raise events? Default: true.
+        /// </summary>
+        public bool RaiseEvents {
+            get => this.watcher.EnableRaisingEvents;
+            set => this.watcher.EnableRaisingEvents = value;
+        }
 
         public LspFileWatcher(DirectoryInfo path) : this(path.FullName) { }
 
@@ -50,8 +58,7 @@ namespace LispDebugAssistant {
         private FileSystemWatcher watcher { get; set; }
 
         private void WatcherOnRenamed(object sender, RenamedEventArgs args) {
-            FileDeleted?.Invoke(args.OldFullPath, DateTime.Now);
-            FileAdded?.Invoke(args.FullPath, DateTime.Now);
+            FileRenamed?.Invoke(args.OldFullPath,args.FullPath, DateTime.Now);
         }
 
         private void WatcherOnDeleted(object sender, FileSystemEventArgs args) {
@@ -62,7 +69,7 @@ namespace LispDebugAssistant {
             FileAdded?.Invoke(args.FullPath, DateTime.Now);
         }
 
-        private Hashtable fileWriteTime = new Hashtable();
+        private readonly Hashtable fileWriteTime = new Hashtable();
 
         private void WatcherOnChanged(object sender, FileSystemEventArgs args) {
             string path = args.FullPath.ToString();
@@ -84,6 +91,10 @@ namespace LispDebugAssistant {
         public void Dispose() {
             if (watcher != null) {
                 watcher.EnableRaisingEvents = false;
+                FileChanged = null;
+                FileAdded=null;
+                FileDeleted = null; ;
+                FileRenamed = null; ;
                 watcher.Dispose();
                 watcher = null;
                 fileWriteTime.Clear();

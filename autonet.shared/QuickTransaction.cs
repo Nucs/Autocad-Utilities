@@ -38,6 +38,7 @@ namespace autonet {
                 }
             }
         }
+
         public LayerTable LayerTable {
             get {
                 if (disposed)

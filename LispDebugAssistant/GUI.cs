@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using Common;
 
 namespace LispDebugAssistant {
     public static class GUI {
@@ -13,13 +14,11 @@ namespace LispDebugAssistant {
         public static void StateTurnOn() {
             _invoke(() => { m.btnOnOff.Text = "Turn Off"; });
             AddLog("Watcher", "Has been turned On.");
-            SetListeningTo(null);
         }
 
         public static void StateTurnOff() {
             _invoke(() => { m.btnOnOff.Text = "Turn On"; });
             AddLog("Watcher", "Has been turned off.");
-            SetListeningTo(null);
         }
 
         public static void StateToggle() {
@@ -93,6 +92,10 @@ namespace LispDebugAssistant {
 
         public static void LogException(Exception e) {
             var dt = DateTime.Now;
+            LogException(e,dt);
+        }
+
+        public static void LogException(Exception e, DateTime when) {
             var txts = e.ToString()
                 .Replace("\r", "")
                 .Replace("\n\n", "\n").Replace("\n\n", "\n")
@@ -103,19 +106,23 @@ namespace LispDebugAssistant {
                 foreach (var t in txts) {
                     m.lstLog.Items.Insert(0, t);
                 }
-                m.lstLog.Items.Insert(0, $"[EXCEPTION] has occured at "+dt.ToString("s"));
-            });
-        }
-
-        public static void SetCurrentFolder(string currentFolder) {
-            _invoke(() => {
-                AddLog("Watcher", "Changed directory to: "+(string.IsNullOrEmpty(currentFolder?.Trim())?"none":currentFolder.Trim()));
+                m.lstLog.Items.Insert(0, $"[EXCEPTION] has occured at "+ when.ToString("s"));
             });
         }
 
         public static void HasReloaded(string filename) {
             filename = filename.Contains("\\") || filename.Contains("/") ? Path.GetFileName(filename) : filename;
             AddLog("Watcher", "File Has reloaded: "+filename);
+        }
+
+        public static void FileRenamed(string oldFilename, LspFile file) {
+            _invoke(() => {
+                lock (m.lstWatching) {
+                    m.lstWatching.Items.Remove(Path.GetFileName(Paths.NormalizePath(oldFilename)));
+                    m.lstWatching.Items.Add(file.FileName);
+                }
+                AddLog("Watcher",$"File `{Path.GetFileName(oldFilename)}` has renamed to `{file.FileName}`");
+            });
         }
     }
 }
