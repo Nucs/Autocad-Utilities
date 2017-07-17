@@ -24,8 +24,7 @@
   (setq CMD (getvar "CMDECHO"))
   (setvar "CMDECHO" 0)
   (princ "\nSelect Ellipses to be converted to PLines: ")
-  (setq SS (ssget '((0 . "ELLIPSE"))))
-  (command ".UNDO" "G")
+  (setq SS (ssget "I" '((0 . "ELLIPSE")))) (command ".UNDO" "G")
   (if SS
     (progn
       (setq OS (getvar "OSMODE"))

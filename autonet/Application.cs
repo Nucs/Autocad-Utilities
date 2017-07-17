@@ -25,7 +25,7 @@ namespace autonet {
             Settings.Save();
             App.DocumentManager.CurrentDocument.Editor.WriteMessage(" ");
             App.DocumentManager.CurrentDocument.Editor.WriteMessage(Settings.Test);
-            LspLoader.Load("CirclePolylineSwap");
+            LspLoader.Load("C2P");
             LspLoader.Load("E2P");
         }
         [CommandMethod("TLOD", CommandFlags.Modal)]

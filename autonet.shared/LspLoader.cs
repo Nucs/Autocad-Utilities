@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -15,7 +17,7 @@ using Exception = System.Exception;
 namespace autonet.lsp {
     public static class LspLoader {
         /// <summary>
-        ///     Load a lsp file, any version is default.
+        ///     Load a lsp file, any version is default from calling assembly
         /// </summary>
         /// <param name="name">Part of the file name, with or without extension.</param>
         /// <param name="version">Specific version, otherwise latest.</param>
@@ -29,7 +31,8 @@ namespace autonet.lsp {
                 File.WriteAllText(file, res.Content, Encoding.UTF8);
                 LoadFile(file);
                 return true;
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 Debug.WriteLine(e);
                 return false;
             }
@@ -39,36 +42,63 @@ namespace autonet.lsp {
 
         internal static ResourceInfo GetResource(string name, int version = -1) {
             name = Path.ChangeExtension(name, null) + (version == -1 ? "" : $".{version}");
-            var asm = Assembly.GetCallingAssembly();
-            string target = null;
-            var targets = asm.GetManifestResourceNames()
-                              ?
-                              .Where(mrn => CultureInfo.InvariantCulture.CompareInfo.IndexOf(mrn, name, CompareOptions.IgnoreCase) >= 0)
-                              .Where(mrn => AlreadyLoaded.Contains(mrn) == false)
-                              .ToArray() ?? new string[0];
+            var asms = AppDomain.CurrentDomain.GetAssemblies().Union(new[] {Assembly.GetCallingAssembly()}).Distinct();
+            Resource target = null;
+            var targets = asms
+                .SelectMany(asm => {
+                    try {
+                        return asm.GetManifestResourceNames().Select(rs => new Resource(asm, rs));
+                    } catch (NotSupportedException) { }
+                    return new Resource[0];
+                })
+                .Where(res => res.Contains(name))
+                .Where(res => AlreadyLoaded.Contains(res.ResourceName) == false)
+                .ToArray();
 
             if (targets.Length == 0)
                 throw new FileNotFoundException($"Could not find a resource that contains the name '{name}'");
             if (targets.Length > 1) {
                 //resolve versions.
-                if (targets.All(t => t.Replace(".lsp", "").Contains('.')) == false)
-                    throw new FileNotFoundException($"Could not resolve resource: '{name}'\nVersus:\n{string.Join("\n", targets)}");
+                if (targets.All(t => t.ResourceName.Replace(".lsp", "").Contains('.')) == false)
+                    throw new FileNotFoundException($"Could not resolve resource: '{name}'\nVersus:\n{string.Join("\n", targets.Select(t => t.ResourceName))}");
                 target = targets.OrderByDescending(t => {
-                        var _i = t.Replace(".lsp", "").Split('.').Last();
+                        var _i = t.ResourceName.Replace(".lsp", "").Split('.').Last();
                         if (_i.All(char.IsDigit) == false)
-                            throw new FileNotFoundException($"Could not resolve resource: '{name}'\nVersus:\n{string.Join("\n", targets)}");
+                            throw new FileNotFoundException($"Could not resolve resource: '{name}'\nVersus:\n{string.Join("\n", targets.Select(tt => tt.ResourceName))}");
                         return int.Parse(_i);
                     })
                     .FirstOrDefault();
-            } else if (targets.Length == 1) {
+            }
+            else if (targets.Length == 1) {
                 target = targets[0];
             }
-            if (AlreadyLoaded.Contains(target))
+            if (AlreadyLoaded.Contains(target.ResourceName))
                 return null;
-            AlreadyLoaded.Add(target);
+            AlreadyLoaded.Add(target.ResourceName);
+            return new ResourceInfo() {FileName = target.ResourceName, Content = target.ReadResource()};
+        }
 
-            using (var sr = new StreamReader(asm.GetManifestResourceStream(target)))
-                return new ResourceInfo() {FileName = target, Content = sr.ReadToEnd()};
+        private class Resource {
+            public Resource(Assembly asm, string resname) {
+                Asm = asm;
+                ResourceName = resname;
+            }
+
+            public Assembly Asm { get; }
+            public string ResourceName { get; }
+
+            public string ReadResource() {
+                using (var sr = new StreamReader(Asm.GetManifestResourceStream(ResourceName)))
+                    return sr.ReadToEnd();
+            }
+
+            /// <summary>
+            ///     Selects where resource contains <see cref="resname"/> in it's name.
+            /// </summary>
+            /// <param name="resname"></param>
+            public bool Contains(string resname) {
+                return CultureInfo.InvariantCulture.CompareInfo.IndexOf(ResourceName, resname, CompareOptions.IgnoreCase) >= 0;
+            }
         }
 
         /// <summary>
@@ -78,7 +108,8 @@ namespace autonet.lsp {
         public static void LoadFile(string fullpath) {
             try {
                 App.DocumentManager.MdiActiveDocument.SendStringToExecute($"(load \"{fullpath.Replace("\\", "/")}\") ", true, false, true);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 throw new Exception($"Failed loading file {fullpath} onto autocad", e);
             }
         }

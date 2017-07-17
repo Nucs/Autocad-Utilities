@@ -15,13 +15,15 @@ namespace autonet {
 
         private bool disposed;
         public Document Doc;
-        public Editor Editor;
+        public Document MdiDoc;
+        private Editor Editor;
         public Transaction Transaction;
 
         public QuickTransaction() {
-            Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
+            Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.CurrentDocument;
             Db = Doc.Database;
             Editor = Doc.Editor;
+            MdiDoc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
             Transaction = Db.TransactionManager.StartTransaction();
         }
 
@@ -135,6 +137,7 @@ namespace autonet {
             return Editor.GetSelection(options, filter);
         }
 
+
         public PromptSelectionResult GetSelection(PromptSelectionOptions options) {
             return Editor.GetSelection(options);
         }
@@ -147,6 +150,10 @@ namespace autonet {
             return Editor.GetSelection();
         }
 
+        public void Regen() {
+            Editor.Regen();
+        }
+
         public PromptSelectionResult SelectAll(SelectionFilter filter) {
             return Editor.SelectAll(filter);
         }
@@ -154,6 +161,8 @@ namespace autonet {
         public PromptSelectionResult SelectAll() {
             return Editor.SelectAll();
         }
+
+
 
         public PromptSelectionResult SelectCrossingWindow(Point3d pt1, Point3d pt2, SelectionFilter filter, bool forceSubEntitySelection) {
             return Editor.SelectCrossingWindow(pt1, pt2, filter, forceSubEntitySelection);

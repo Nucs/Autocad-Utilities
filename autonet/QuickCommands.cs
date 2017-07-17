@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using autonet.Extensions;
-using autonet.lsp;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -13,26 +12,26 @@ namespace autonet {
         /// <summary>
         ///     Custom method to make my work faster..
         /// </summary>
-        [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
         public static void QuickCableCommand() {
             using (var tr = new QuickTransaction()) {
                 tr.WriteLine(Application.Settings.FileName);
-                PromptSelectionOptions psOpts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to apply magic dust on: ", MessageForRemoval = "\n...Remove cables: "};
-                var psRes = tr.GetSelection(psOpts);
-                if (psRes.Status != PromptStatus.OK)
+                PromptSelectionOptions opts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to apply magic dust on: ", MessageForRemoval = "\n...Remove cables: "};
+                var set = tr.GetImpliedOrSelect(opts);
+                if (set == null || set.Count == 0)
                     return;
 
                 if (tr.LayerTable.Has("EL-LT-CABL-160")) {
                     var lyr = tr.LayerTable["EL-LT-CABL-160"];
                     //check the layer and apply.
-                    foreach (var e in psRes.Value.GetObjectIds().Select(oid=>oid.GetObject(tr))) {
+                    foreach (var e in set.GetObjectIds().Select(oid=>oid.GetObject(tr))) {
                         e.SetLayerId(lyr, true);   
                         //e.DowngradeOpen();
                     }
                 }
                 tr.Commit();
 
-                tr.Command("_.pedit", "_m", psRes.Value, "_y", "_j", "", "_j", "", "_j", "", "_w", "0.2", "");
+                tr.Command("_.pedit", "_m", set, "_y", "_j", "", "_j", "", "_j", "", "_w", "0.2", "");
             }
         }
 
@@ -77,7 +76,7 @@ namespace autonet {
         /// <summary>
         ///     Fits all selected polylines.
         /// </summary>
-        [CommandMethod("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void FilletPolylinesCommand() {
             using (var tr = new QuickTransaction()) {
                 PromptSelectionOptions psOpts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to fillet: ", MessageForRemoval = "\n...Remove cables: "};
@@ -94,19 +93,18 @@ namespace autonet {
         ///     Counts the lengths of all the selected objects.<br></br>
         ///     In case of a BlockReference, it will search for a property named Distance or Length.
         /// </summary>
-        [CommandMethod("Quicky", "sq", CommandFlags.UsePickSet | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "sq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void SummarizeLengthsCommand() {
             using (var tr = new QuickTransaction()) {
-                var sel = tr.Doc.Editor.GetSelection();
+                var set = tr.GetImpliedOrSelect();
                 double l = 0;
-                if (sel.Status != PromptStatus.OK)
+                if (set == null || set.Count == 0)
                     return;
-                string name = null;
-                var set = sel.Value;
                 var an = new List<string>(); //already announced list..
                 foreach (SelectedObject o in set) {
                     if (o != null) {
                         var e = tr.GetObject(o.ObjectId, OpenMode.ForWrite) as Entity;
+                        string name = null;
                         switch (e) {
                             case null:
                                 continue;
@@ -192,11 +190,45 @@ namespace autonet {
                         }
                     }
                 }
+
                 tr.WriteLine($"Length: " + l.ToString("##.000"));
-                tr.Commit();
+
             }
+
         }
 
+        /// <summary>
+        ///     Counts the lengths of all the selected objects.<br></br>
+        ///     In case of a BlockReference, it will search for a property named Distance or Length.
+        /// </summary>
+        [CommandMethod("Quicky", "ss", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void SelectCommand() {
+            using (var tr = new QuickTransaction()) {
+                var set = tr.GetImpliedOrSelect();
+                if (set == null)
+                    return;
+
+                tr.WriteLine($"Count: " + set.Count);
+
+                tr.SetImpliedSelection(set);
+                tr.StringCommand("C2P ");
+                tr.SetImpliedSelection(set = tr.SelectLast().Value?? SelectionSet.FromObjectIds(new ObjectId[0]));
+                tr.Commit();
+            }
+
+        }
+
+        /// <summary>
+        ///     Counts the lengths of all the selected objects.<br></br>
+        ///     In case of a BlockReference, it will search for a property named Distance or Length.
+        /// </summary>
+        [CommandMethod("Quicky", "se", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void SelectOtherCommand() {
+            using (var tr = new QuickTransaction()) {
+                tr.SetImpliedSelection(tr.SelectAll().Value ?? SelectionSet.FromObjectIds(new ObjectId[0]));
+            }
+
+        }
 
         [CommandMethod("Quicky", "sw", CommandFlags.UsePickSet)]
         public static void SelectInWindowCommand() {

@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\CollectionExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\PathExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\SelectionSetExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\UtilityExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\FileDialogs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\SafeDictionary.cs" />

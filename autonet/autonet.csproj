@@ -114,8 +114,8 @@
     <Compile Include="Settings\QuickySettings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="lsp\CirclePolylineSwap.1.lsp" />
     <EmbeddedResource Include="lsp\E2P.1.LSP" />
+    <EmbeddedResource Include="lsp\C2P.1.lsp" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
