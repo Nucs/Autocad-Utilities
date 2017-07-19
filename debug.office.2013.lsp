@@ -1,0 +1,1 @@
+(command "_netload" "Z:/AutoCAD/C#/autonet/autonet/bin/Debug/autonet.addons.dll")

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.GraphicsInterface;
 
 namespace autonet.Extensions {
     public static class CollectionExtensions {
@@ -23,8 +24,16 @@ namespace autonet.Extensions {
             return TakeoutWhere<TIn,TOut>(@in, @i=>@i.GetType() == typeof(TOut));
         }
 
-        public static SelectionSet ToSelectionSet<T>(this List<T> list, SelectionMethod? method = SelectionMethod.Crossing) where T : Entity {
-            var ss = SelectionSet.FromObjectIds(list.Select(t => t.ObjectId).ToArray());
+        public static SelectionSet ToSelectionSet<T>(this IEnumerable<T> list, SelectionMethod? method = SelectionMethod.Crossing) where T : Drawable {
+            var ss = SelectionSet.FromObjectIds(list.Select(t => t.Id).ToArray());
+            if (method!=null)
+                foreach (SelectedObject o in ss) 
+                    o.GetType().GetField("m_method", BindingFlags.NonPublic|BindingFlags.Instance)?.SetValue(o, (SelectionMethod)method);
+            
+            return ss;
+        }
+        public static SelectionSet ToSelectionSet(this IEnumerable<ObjectId> list, SelectionMethod? method = SelectionMethod.Crossing) {
+            var ss = SelectionSet.FromObjectIds(list.ToArray());
             if (method!=null)
                 foreach (SelectedObject o in ss) 
                     o.GetType().GetField("m_method", BindingFlags.NonPublic|BindingFlags.Instance)?.SetValue(o, (SelectionMethod)method);

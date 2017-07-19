@@ -154,5 +154,6 @@
   </ItemGroup>
   <Import Project="..\autonet.shared\autonet.shared.projitems" Label="Shared" />
   <Import Project="..\Newtonsoft.Json\Newtonsoft.Json.projitems" Label="Shared" />
+  <Import Project="..\autonet.addons\autonet.addons.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

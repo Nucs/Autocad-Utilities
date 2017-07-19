@@ -9,18 +9,26 @@
     <Import_RootNamespace>autonet</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\cmd.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\CreateTestCuix.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\CollectionExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ExceptBy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\ObjectExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\PathExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\SelectionSetExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\UtilityExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\FileDialogs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\SafeDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LspLoader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Paths.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Quick.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)QuickTransaction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\ISaveable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\JsonConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SettingsBag.cs" />
   </ItemGroup>
 </Project>

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26403.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "autonet", "autonet\autonet.csproj", "{25D3F6F7-E0D5-4F67-A50D-CAF413525814}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "autonet.addons", "autonet\autonet.addons.csproj", "{25D3F6F7-E0D5-4F67-A50D-CAF413525814}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Newtonsoft.Json", "Newtonsoft.Json\Newtonsoft.Json.shproj", "{7F70DBA0-49F6-4585-8AF4-A89A0C026C7F}"
 EndProject
@@ -17,12 +17,28 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "autonet.shared", "autonet.s
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{736854AD-947D-4C53-8BA5-065FBCE091BF}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "autonet.addons", "autonet.addons\autonet.addons.shproj", "{4F5D0292-419F-4603-B490-BAF7EF257612}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "autonet.addons.2013", "autonet2013\autonet.addons.2013.csproj", "{2120FF03-84EA-4C56-B784-A267B147BD43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "libraries\winforms-master\TestApp\TestApp.csproj", "{B94AF907-0915-4430-BC49-05BA5091D2AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdamsLair.WinForms", "libraries\winforms-master\WinForms\AdamsLair.WinForms.csproj", "{44E2FD11-C687-41ED-B72F-1A4C92479EDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopupControl", "libraries\winforms.popupcontrol-master\PopupControl\PopupControl.csproj", "{C7AC0623-D870-42DF-ACFC-C75CBD76A959}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		autonet.addons\autonet.addons.projitems*{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}*SharedItemsImports = 4
 		autonet.shared\autonet.shared.projitems*{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}*SharedItemsImports = 4
 		Newtonsoft.Json\Newtonsoft.Json.projitems*{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}*SharedItemsImports = 4
+		autonet.addons\autonet.addons.projitems*{2120ff03-84ea-4c56-b784-a267b147bd43}*SharedItemsImports = 4
+		autonet.shared\autonet.shared.projitems*{2120ff03-84ea-4c56-b784-a267b147bd43}*SharedItemsImports = 4
+		Newtonsoft.Json\Newtonsoft.Json.projitems*{2120ff03-84ea-4c56-b784-a267b147bd43}*SharedItemsImports = 4
+		autonet.addons\autonet.addons.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
 		autonet.shared\autonet.shared.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
 		Newtonsoft.Json\Newtonsoft.Json.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
+		autonet.addons\autonet.addons.projitems*{4f5d0292-419f-4603-b490-baf7ef257612}*SharedItemsImports = 13
 		Newtonsoft.Json\Newtonsoft.Json.projitems*{7f70dba0-49f6-4585-8af4-a89a0c026c7f}*SharedItemsImports = 13
 		autonet.shared\autonet.shared.projitems*{c505a428-7e71-489c-8bf3-e17dabf063ce}*SharedItemsImports = 13
 	EndGlobalSection
@@ -47,6 +63,22 @@ Global
 		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F2E333E-32EA-4FFF-95DB-F1FFC48F7B41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2120FF03-84EA-4C56-B784-A267B147BD43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2120FF03-84EA-4C56-B784-A267B147BD43}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2120FF03-84EA-4C56-B784-A267B147BD43}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2120FF03-84EA-4C56-B784-A267B147BD43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B94AF907-0915-4430-BC49-05BA5091D2AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B94AF907-0915-4430-BC49-05BA5091D2AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B94AF907-0915-4430-BC49-05BA5091D2AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B94AF907-0915-4430-BC49-05BA5091D2AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44E2FD11-C687-41ED-B72F-1A4C92479EDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44E2FD11-C687-41ED-B72F-1A4C92479EDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44E2FD11-C687-41ED-B72F-1A4C92479EDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44E2FD11-C687-41ED-B72F-1A4C92479EDC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7AC0623-D870-42DF-ACFC-C75CBD76A959}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7AC0623-D870-42DF-ACFC-C75CBD76A959}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7AC0623-D870-42DF-ACFC-C75CBD76A959}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7AC0623-D870-42DF-ACFC-C75CBD76A959}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,5 +86,9 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{7F70DBA0-49F6-4585-8AF4-A89A0C026C7F} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
 		{C505A428-7E71-489C-8BF3-E17DABF063CE} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
+		{4F5D0292-419F-4603-B490-BAF7EF257612} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
+		{B94AF907-0915-4430-BC49-05BA5091D2AB} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
+		{44E2FD11-C687-41ED-B72F-1A4C92479EDC} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
+		{C7AC0623-D870-42DF-ACFC-C75CBD76A959} = {736854AD-947D-4C53-8BA5-065FBCE091BF}
 	EndGlobalSection
 EndGlobal

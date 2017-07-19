@@ -55,8 +55,6 @@ namespace autonet.Extensions {
                 }
         }
 
-       
-
         private static void joinPolylines() {
             Document document =
                 Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;

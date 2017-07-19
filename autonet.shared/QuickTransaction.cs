@@ -20,7 +20,11 @@ namespace autonet {
         public Transaction Transaction;
 
         public QuickTransaction() {
+#if AUTOCAD13 
+            Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
+#else
             Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.CurrentDocument;
+#endif
             Db = Doc.Database;
             Editor = Doc.Editor;
             MdiDoc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
@@ -54,6 +58,7 @@ namespace autonet {
                 }
             }
         }
+
         public BlockTable BlockTable {
             get {
                 if (disposed)
@@ -118,6 +123,7 @@ namespace autonet {
         }
 
         private bool __hascommited = false;
+
         public void Commit() {
             if (__hascommited)
                 throw new InvalidOperationException("Can't commit twice with the same transaction! Autocad will crash.");
@@ -165,7 +171,6 @@ namespace autonet {
         public PromptSelectionResult SelectAll() {
             return Editor.SelectAll();
         }
-
 
 
         public PromptSelectionResult SelectCrossingWindow(Point3d pt1, Point3d pt2, SelectionFilter filter, bool forceSubEntitySelection) {
@@ -236,8 +241,10 @@ namespace autonet {
         /// </summary>
         /// <param name="parameter"></param>
         public void Command(params object[] parameter) {
-            Editor.Command(parameter);
+            Quick.Command(parameter);
         }
+
+#if !AUTOCAD13
 
         /// <summary>
         ///     Execute a command much a like in LISP. Instead of spaces write commas.<br></br>
@@ -254,11 +261,13 @@ namespace autonet {
             return Editor.CommandAsync(parameter);
         }
 
+#endif
+
         /// <summary>
         ///     Sends a string command to the commandline, dont forget to add space for it to execute!
         /// </summary>
-        public void StringCommand(string command, bool hide=false) {
-            Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.SendStringToExecute(command,true,false, !hide);
+        public void StringCommand(string command, bool hide = false) {
+            Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.SendStringToExecute(command, true, false, !hide);
         }
     }
 }

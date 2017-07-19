@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{44E2FD11-C687-41ED-B72F-1A4C92479EDC}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AdamsLair.WinForms</RootNamespace>
+    <AssemblyName>AdamsLair.WinForms</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DocumentationFile>AdamsLair.WinForms.xml</DocumentationFile>
+    <NoWarn>1591</NoWarn>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\Release\</OutputPath>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <DocumentationFile>AdamsLair.WinForms.xml</DocumentationFile>
+    <NoWarn>1591</NoWarn>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PopupControl, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\winforms.popupcontrol-master\PopupControl\obj\Debug\PopupControl.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ColorControls\ColorPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ColorControls\ColorPickerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ColorControls\ColorPickerDialog.Designer.cs">
+      <DependentUpon>ColorPickerDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ColorControls\ColorShowBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ColorControls\ColorSlider.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Drawing\QualityLevel.cs" />
+    <Compile Include="Drawing\ExpandNodeState.cs" />
+    <Compile Include="Drawing\CheckBoxState.cs" />
+    <Compile Include="Drawing\ButtonState.cs" />
+    <Compile Include="Drawing\BorderState.cs" />
+    <Compile Include="Drawing\BorderStyle.cs" />
+    <Compile Include="Drawing\IconImage.cs" />
+    <Compile Include="Drawing\ExpandBoxState.cs" />
+    <Compile Include="Drawing\TextBoxState.cs" />
+    <Compile Include="Drawing\TextBoxStyle.cs" />
+    <Compile Include="Internal\ExtMethodsMessage.cs" />
+    <Compile Include="Internal\NativeWinAPI.cs" />
+    <Compile Include="ItemModels\EventArgs\MenuModelItemsEventArgs.cs" />
+    <Compile Include="ItemModels\IMenuModel.cs" />
+    <Compile Include="ItemModels\IMenuModelItem.cs" />
+    <Compile Include="ItemModels\ListModel.cs" />
+    <Compile Include="ItemModels\MenuItemTypeHint.cs" />
+    <Compile Include="ItemModels\MenuModel.cs" />
+    <Compile Include="ItemModels\MenuModelItem.cs" />
+    <Compile Include="ItemViews\EventArgs\MenuStripMenuViewEventArgs.cs" />
+    <Compile Include="ItemViews\EventArgs\MenuStripMenuViewItemEventArgs.cs" />
+    <Compile Include="ItemViews\ITiledViewItemEditor.cs" />
+    <Compile Include="ItemViews\MenuStripMenuView.cs" />
+    <Compile Include="ItemViews\TiledViewTextItemEditor.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OriginSelector.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PropertyEditing\PropertyEditors\LabelPropertyEditor.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineViewSelectionEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineViewCursorEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineGraphModelChangedEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineGraphCollectionEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineTrackModelEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineTrackModelChangedEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineGraphEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineGraphRangeEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineTrackModelCollectionEventArgs.cs" />
+    <Compile Include="TimelineControls\Models\ITimelineModel.cs" />
+    <Compile Include="TimelineControls\Models\ITimelineTrackModel.cs" />
+    <Compile Include="TimelineControls\Models\ITimelineGraphTrackModel.cs" />
+    <Compile Include="TimelineControls\Models\ITimelineGraphModel.cs" />
+    <Compile Include="TimelineControls\Models\TimelineLinearGraphModel.cs" />
+    <Compile Include="TimelineControls\TimelineModelViewAssignmentAttribute.cs" />
+    <Compile Include="TimelineControls\Models\TimelineTrackModel.cs" />
+    <Compile Include="TimelineControls\Models\TimelineGraphTrackModel.cs" />
+    <Compile Include="TimelineControls\Models\TimelineModel.cs" />
+    <Compile Include="TimelineControls\TimelineViewControlRenderer.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineViewPaintEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineViewTrackPaintEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineViewTrackEventArgs.cs" />
+    <Compile Include="TimelineControls\EventArgs\TimelineViewEventArgs.cs" />
+    <Compile Include="TimelineControls\TimelineViewGraph.cs" />
+    <Compile Include="TimelineControls\TimelineViewRulerMarkWeight.cs" />
+    <Compile Include="TimelineControls\TimelineViewRulerMark.cs" />
+    <Compile Include="TimelineControls\TimelineViewGraphTrack.cs" />
+    <Compile Include="TimelineControls\TimelineView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PropertyEditing\BitmaskItem.cs" />
+    <Compile Include="Drawing\ControlRenderer.cs" />
+    <Compile Include="PropertyEditing\EditorTemplates\ComboBoxDropDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PropertyEditing\EditorTemplates\ComboBoxEditorTemplate.cs" />
+    <Compile Include="PropertyEditing\EditorTemplates\EditorTemplate.cs" />
+    <Compile Include="PropertyEditing\EditorTemplates\BitmaskSelectorDropDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PropertyEditing\EditorTemplates\BitmaskEditorTemplate.cs" />
+    <Compile Include="PropertyEditing\EditorTemplates\MultiComboBoxDropDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PropertyEditing\EditorTemplates\MultiComboBoxEditorTemplate.cs" />
+    <Compile Include="PropertyEditing\EditorTemplates\NumericEditorTemplate.cs" />
+    <Compile Include="PropertyEditing\EditorTemplates\StringEditorTemplate.cs" />
+    <Compile Include="PropertyEditing\GroupedPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\ObjectItem.cs" />
+    <Compile Include="PropertyEditing\MemberwisePropertyEditor.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertyEditing\PropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\BoolPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\EnumPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\FlaggedEnumPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\BitmaskPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\IListPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\IDictionaryPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\ObjectSelectorPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\StringPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyEditors\NumericPropertyEditor.cs" />
+    <Compile Include="PropertyEditing\PropertyGrid.cs" />
+    <Compile Include="Properties\ResourcesCache.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="ItemModels\IListModel.cs" />
+    <Compile Include="ItemModels\EventArgs\ListModelItemsEventArgs.cs" />
+    <Compile Include="ItemViews\EventArgs\TiledViewItemAppearanceEventArgs.cs" />
+    <Compile Include="ItemViews\EventArgs\TiledViewItemMouseEventArgs.cs" />
+    <Compile Include="ItemViews\EventArgs\TiledViewItemEventArgs.cs" />
+    <Compile Include="ItemViews\EventArgs\TiledViewItemDrawEventArgs.cs" />
+    <Compile Include="ItemViews\EventArgs\TiledViewEventArgs.cs" />
+    <Compile Include="ItemViews\TiledView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Internal\ExtMethodsColor.cs" />
+    <Compile Include="Internal\ReflectionHelper.cs" />
+    <Compile Include="TimelineControls\TimelineViewTrack.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ColorControls\ColorPickerDialog.resx">
+      <DependentUpon>ColorPickerDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="EmbeddedResources\add.png" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="EmbeddedResources\cross.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeClosedDisabled.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeClosedHot.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeClosedNormal.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeClosedPressed.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeOpenedDisabled.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeOpenedHot.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeOpenedPressed.png" />
+    <EmbeddedResource Include="EmbeddedResources\ExpandNodeOpenedNormal.png" />
+    <EmbeddedResource Include="EmbeddedResources\NumberGripIcon.png" />
+    <EmbeddedResource Include="EmbeddedResources\DropDownIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_down.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_downleft.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_downright.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_up.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_upleft.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EmbeddedResources\arrow_upright.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

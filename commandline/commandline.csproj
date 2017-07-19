@@ -110,13 +110,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\autonet\autonet.csproj">
+    <ProjectReference Include="..\autonet\autonet.addons.csproj">
       <Project>{25d3f6f7-e0d5-4f67-a50d-caf413525814}</Project>
-      <Name>autonet</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\LispDebugAssistant\LispDebugAssistant.csproj">
-      <Project>{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}</Project>
-      <Name>LispDebugAssistant</Name>
+      <Name>autonet.addons</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
