@@ -6,6 +6,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
+using YourCAD.Utilities;
 
 namespace autonet {
     public static class QuickCommands {
@@ -24,8 +25,8 @@ namespace autonet {
                 if (tr.LayerTable.Has("EL-LT-CABL-160")) {
                     var lyr = tr.LayerTable["EL-LT-CABL-160"];
                     //check the layer and apply.
-                    foreach (var e in set.GetObjectIds().Select(oid=>oid.GetObject(tr))) {
-                        e.SetLayerId(lyr, true);   
+                    foreach (var e in set.GetObjectIds().Select(oid => oid.GetObject(tr))) {
+                        e.SetLayerId(lyr, true);
                         //e.DowngradeOpen();
                     }
                 }
@@ -35,6 +36,7 @@ namespace autonet {
             }
         }
 
+        [CommandMethod("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         /*/// <summary>
         ///     does hbreg to selection
         /// </summary>
@@ -72,23 +74,6 @@ namespace autonet {
                 tr.Commit();
             }
         }*/
-
-        /// <summary>
-        ///     Fits all selected polylines.
-        /// </summary>
-        [CommandMethod("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void FilletPolylinesCommand() {
-            using (var tr = new QuickTransaction()) {
-                PromptSelectionOptions psOpts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to fillet: ", MessageForRemoval = "\n...Remove cables: "};
-                var selq = tr.GetSelection(psOpts);
-                if (selq.Status != PromptStatus.OK)
-                    return;
-
-                tr.Command("_.pedit", "_m", selq.Value, "_f","");
-                tr.Commit();
-            }
-        }
-
         /// <summary>
         ///     Counts the lengths of all the selected objects.<br></br>
         ///     In case of a BlockReference, it will search for a property named Distance or Length.
@@ -141,7 +126,8 @@ namespace autonet {
                                         if (string.IsNullOrEmpty(val.ToString()) == false && double.TryParse(val.ToString(), out double res)) {
                                             l += res;
                                             goto _br_exit;
-                                        } else {
+                                        }
+                                        else {
                                             tr.WriteLine($"{br.Name}, {br.BlockName} with property named {att.PropertyName} has no numeric value.");
                                             goto _br_exit;
                                         }
@@ -192,9 +178,7 @@ namespace autonet {
                 }
 
                 tr.WriteLine($"Length: " + l.ToString("##.000"));
-
             }
-
         }
 
         /// <summary>
@@ -212,22 +196,20 @@ namespace autonet {
 
                 tr.SetImpliedSelection(set);
                 tr.StringCommand("C2P ");
-                tr.SetImpliedSelection(set = tr.SelectLast().Value?? SelectionSet.FromObjectIds(new ObjectId[0]));
+                tr.SetImpliedSelection(set = tr.SelectLast().Value ?? SelectionSet.FromObjectIds(new ObjectId[0]));
                 tr.Commit();
             }
-
         }
 
         /// <summary>
         ///     Counts the lengths of all the selected objects.<br></br>
         ///     In case of a BlockReference, it will search for a property named Distance or Length.
         /// </summary>
-        [CommandMethod("Quicky", "se", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        [CommandMethod("Quicky", "se", CommandFlags.NoPaperSpace | CommandFlags.Redraw | CommandFlags.UsePickSet)]
         public static void SelectOtherCommand() {
             using (var tr = new QuickTransaction()) {
-                tr.SetImpliedSelection(tr.SelectAll().Value ?? SelectionSet.FromObjectIds(new ObjectId[0]));
+                tr.SetSelected(tr.SelectAll().Value);
             }
-
         }
 
         [CommandMethod("Quicky", "sw", CommandFlags.UsePickSet)]
@@ -262,8 +244,14 @@ namespace autonet {
                 tr.Commit();
             }
         }
-
-        [CommandMethod("Quicky", "2p", CommandFlags.UsePickSet | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "sss", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+         public static void AAAnyToPolyCommand() {
+            using (var tr = new QuickTransaction()) {
+                CommandLineHelper.ExecuteStringOverInvoke("E2P ");
+                tr.Commit();
+            }
+        }
+        [CommandMethod("Quicky", "2p", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void AnyToPolyCommand() {
             using (var tr = new QuickTransaction()) {
                 PromptSelectionOptions psOpts = new PromptSelectionOptions {MessageForAdding = "\nSelect lines to convert: ", MessageForRemoval = "\n...Remove lines: "};
@@ -271,14 +259,36 @@ namespace autonet {
                 if (psRes.Status != PromptStatus.OK)
                     return;
                 var sel = psRes.Value.GetObjectIds().Select(o => o.GetObject(tr)).ToList();
-                var circles = sel.TakeoutWhereType<Entity,Circle>().ToSelectionSet();
+                var circles = sel.TakeoutWhereType<Entity, Circle>().ToSelectionSet();
                 var elipses = sel.TakeoutWhereType<Entity, Ellipse>().ToSelectionSet();
-                if (sel.Count>0)
-                    tr.Command("_.pedit", "_m", sel.ToSelectionSet(), "", "_j", "", "_j", "", "_j", "", "");
-                tr.SetImpliedSelection(circles);
-                if (circles.Count>0)
-                        tr.Command("CircleToPoly", circles);
+                var l = new List<SelectionSet>();
 
+                if (sel.Count > 0) {
+                    tr.SetSelected(sel.ToSelectionSet());
+                    tr.Command("_.pedit", "_m", sel.ToSelectionSet(), "", "_j", "", "_j", "", "_j", "", "");
+                    //l.Add(tr.SelectPrevious().Value);
+                }
+                if (elipses.Count > 0) {
+                    using (var trr = new QuickTransaction()) {
+                        trr.SetSelected(elipses);
+                        CommandLineHelper.ExecuteStringOverInvoke("E2P ");
+                        //trr.StringCommand("E2P ");
+                       // l.Add(trr.SelectImplied().Value);
+                        trr.Commit();
+                    }
+                }
+
+                if (circles.Count > 0) {
+                    using (var trr = new QuickTransaction()) {
+                        trr.SetSelected(circles);
+                        CommandLineHelper.ExecuteStringOverInvoke("C2P ");
+                        //l.Add(trr.SelectImplied().Value);
+                        trr.Commit();
+                    }
+                }
+
+
+                
                 tr.Commit();
             }
         }

@@ -5,7 +5,7 @@ using Common;
 
 namespace autonet.Settings {
     public class QuickySettings : JsonConfiguration {
-        public override string FileName { get; } = Paths.ConfigFile.FullName;
+        public override string FileName { get; } = Paths.ConfigFile("Quicky").FullName;
         public string Test { get; set; } = "lol";
     }
 }

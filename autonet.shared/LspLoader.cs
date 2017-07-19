@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using autonet.Extensions;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
@@ -41,6 +42,15 @@ namespace autonet.lsp {
         public static List<string> AlreadyLoaded { get; } = new List<string>();
 
         internal static ResourceInfo GetResource(string name, int version = -1) {
+            string ReplaceCaseInsensitive(string input, string search, string replacement) {
+                string result = Regex.Replace(
+                    input,
+                    Regex.Escape(search),
+                    replacement.Replace("$", "$$"),
+                    RegexOptions.IgnoreCase
+                );
+                return result;
+            }
             name = Path.ChangeExtension(name, null) + (version == -1 ? "" : $".{version}");
             var asms = AppDomain.CurrentDomain.GetAssemblies().Union(new[] {Assembly.GetCallingAssembly()}).Distinct();
             Resource target = null;
@@ -52,17 +62,16 @@ namespace autonet.lsp {
                     return new Resource[0];
                 })
                 .Where(res => res.Contains(name))
-                .Where(res => AlreadyLoaded.Contains(res.ResourceName) == false)
                 .ToArray();
 
             if (targets.Length == 0)
                 throw new FileNotFoundException($"Could not find a resource that contains the name '{name}'");
             if (targets.Length > 1) {
                 //resolve versions.
-                if (targets.All(t => t.ResourceName.Replace(".lsp", "").Contains('.')) == false)
+                if (targets.All(t => ReplaceCaseInsensitive(t.ResourceName, ".lsp", "").Contains('.')) == false)
                     throw new FileNotFoundException($"Could not resolve resource: '{name}'\nVersus:\n{string.Join("\n", targets.Select(t => t.ResourceName))}");
                 target = targets.OrderByDescending(t => {
-                        var _i = t.ResourceName.Replace(".lsp", "").Split('.').Last();
+                        var _i = ReplaceCaseInsensitive(t.ResourceName,".lsp", "").Split('.').Last();
                         if (_i.All(char.IsDigit) == false)
                             throw new FileNotFoundException($"Could not resolve resource: '{name}'\nVersus:\n{string.Join("\n", targets.Select(tt => tt.ResourceName))}");
                         return int.Parse(_i);
@@ -73,7 +82,7 @@ namespace autonet.lsp {
                 target = targets[0];
             }
             if (AlreadyLoaded.Contains(target.ResourceName))
-                return null;
+                throw new InvalidOperationException($"{target.ResourceName} is already loaded!");
             AlreadyLoaded.Add(target.ResourceName);
             return new ResourceInfo() {FileName = target.ResourceName, Content = target.ReadResource()};
         }

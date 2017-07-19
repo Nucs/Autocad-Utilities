@@ -117,8 +117,12 @@ namespace autonet {
             return Transaction.GetAllObjects();
         }
 
+        private bool __hascommited = false;
         public void Commit() {
+            if (__hascommited)
+                throw new InvalidOperationException("Can't commit twice with the same transaction! Autocad will crash.");
             Transaction.Commit();
+            __hascommited = true;
         }
 
         public void Abort() {
@@ -253,8 +257,8 @@ namespace autonet {
         /// <summary>
         ///     Sends a string command to the commandline, dont forget to add space for it to execute!
         /// </summary>
-        public void StringCommand(string command) {
-            Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.SendStringToExecute(command,true,false,true);
+        public void StringCommand(string command, bool hide=false) {
+            Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.SendStringToExecute(command,true,false, !hide);
         }
     }
 }

@@ -23,7 +23,7 @@
     <DefineConstants>TRACE;DEBUG;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -97,6 +97,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -108,14 +109,30 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Application.cs" />
+    <Compile Include="CustomCommands\cmd.cs" />
     <Compile Include="CustomCommands\CreateTestCuix.cs" />
+    <Compile Include="Forms\QQForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\QQForm.Designer.cs">
+      <DependentUpon>QQForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuickCommands.cs" />
+    <Compile Include="Settings\QQSettings.cs" />
     <Compile Include="Settings\QuickySettings.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Forms\QQForm.resx">
+      <DependentUpon>QQForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="lsp\E2P.1.LSP" />
     <EmbeddedResource Include="lsp\C2P.1.lsp" />
+    <EmbeddedResource Include="lsp\C2P.2.lsp" />
+    <EmbeddedResource Include="lsp\E2P.2.LSP" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

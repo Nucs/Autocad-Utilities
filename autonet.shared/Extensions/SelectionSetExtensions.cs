@@ -49,5 +49,12 @@ namespace autonet.Extensions {
             }
             return sel.Value;
         }
+
+        public static void SetSelected(this QuickTransaction tr, SelectionSet ss, bool runsssetfirst = false) {
+            tr.SetImpliedSelection(ss);
+            //tr.SetImpliedSelection(tr.SelectImplied().Value);
+            //if (runsssetfirst)
+                tr.StringCommand("(sssetfirst nil (ssget \"I\")) ", false);
+        }
     }
 }

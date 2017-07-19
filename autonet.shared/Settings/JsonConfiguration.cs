@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace autonet {
     namespace Common.Settings {
-        public abstract class JsonConfiguration : ISaveable {
+        public abstract class JsonConfiguration : ISaveable, ICloneable {
             private static readonly JsonSerializerSettings _settings = new JsonSerializerSettings {Formatting = Formatting.Indented, ReferenceLoopHandling = ReferenceLoopHandling.Ignore, NullValueHandling = NullValueHandling.Include};
             private readonly Type _childtype;
 
@@ -155,6 +155,9 @@ namespace autonet {
             private static T CreateInstance<T>(Type @this) {
                 return (T) Activator.CreateInstance(@this);
             }*/
+            public object Clone() {
+                return this.Copy();
+            }
         }
 
         [Serializable]

@@ -34,7 +34,7 @@ namespace Common {
         /// <summary>
         ///     The config file inside user profile.
         /// </summary>
-        public static FileInfo ConfigFile => new FileInfo(Path.Combine(ConfigDirectory.FullName, Environment.MachineName + ".json"));
+        public static FileInfo ConfigFile(string configname) => new FileInfo(Path.Combine(ConfigDirectory.FullName, Environment.MachineName +$".{configname}.json"));
 
         /// <summary>
         ///     The path to the entry exe's directory.
