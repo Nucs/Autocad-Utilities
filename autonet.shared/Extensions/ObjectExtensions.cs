@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using System.ArrayExtensions;
+using Autodesk.AutoCAD.Colors;
 
 namespace System {
     public static class ObjectExtensions {
@@ -55,6 +56,7 @@ namespace System {
         public static T Copy<T>(this T original) {
             return (T) Copy((Object) original);
         }
+
     }
 
     public class ReferenceEqualityComparer : EqualityComparer<Object> {
@@ -101,6 +103,9 @@ namespace System {
                 }
                 return false;
             }
+
         }
+
+        
     }
 }

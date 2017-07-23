@@ -141,6 +141,7 @@ namespace autonet {
                 ClearDetails();
                 return;
             }
+            current.Reload();
             LoadDetails(current);
         }
 

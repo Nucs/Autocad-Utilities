@@ -12,25 +12,28 @@ namespace autonet.Extensions {
             }
         }
 
-        public static Entity ConvertToPolyline(this QuickTransaction tr, ObjectId id) {
+        public static Polyline ConvertToPolyline(this QuickTransaction tr, ObjectId id) {
             return ConvertToPolyline(tr, tr.GetObject(id, OpenMode.ForWrite) as Entity ?? throw new InvalidOperationException("The given object id is not an entity!"));
         }
 
-        public static Entity ConvertToPolyline(this Entity id, QuickTransaction tr) {
+        public static Polyline ConvertToPolyline(this Entity id, QuickTransaction tr) {
             return ConvertToPolyline(tr, id);
         }
 
-        public static Entity ConvertToPolyline(this QuickTransaction tr, Entity id) {
+        public static Polyline ConvertToPolyline(this QuickTransaction tr, Entity id) {
             switch (id) {
                 case Polyline poly:
-                    return id;
+                    return poly;
                 case Line line:
                     return LineToPoly(tr, line);
                 case Arc arc:
                     return ArcToPoly(tr, arc);
-                case Circle circle:
+                case Circle c:
+                    return CircleToPoly(tr, c);
+                case Spline sp:
+                    return SplineToPoly(tr, sp);
                 default:
-                    tr.WriteLine("Unsupported: " + id.GetType().FullName);
+                    tr.WriteLine("Unsupported to polyline conversion: " + id.GetType().FullName);
                     return null;
             }
         }
@@ -54,6 +57,39 @@ namespace autonet.Extensions {
                 tr.AddNewlyCreatedDBObject(poly, true);
                 arc.Erase();
             }
+        }
+
+        public static Polyline CircleToPoly(this QuickTransaction tr, Circle c) {
+            var r = c.Radius;
+            new Ellipse();
+            var top = c.Center.Add(new Vector3d(0, r, 0));
+            var bottom = c.Center.Add(new Vector3d(0, -r, 0));
+            var right = c.Center.Add(new Vector3d(r, 0, 0));
+            var left = c.Center.Add(new Vector3d(-r, 0, 0));
+            var right_cir = new CircularArc3d(bottom, right, top);
+            var left_cir = new CircularArc3d(top, left, bottom);
+            Polyline poly = new Polyline();
+            poly.AddVertexAt(0, new Point2d(right_cir.StartPoint.X, right_cir.StartPoint.Y), right_cir.GetArcBulge(), 0, 0);
+            poly.AddVertexAt(1, new Point2d(right_cir.EndPoint.X, right_cir.EndPoint.Y), 0, 0, 0);
+            poly.AddVertexAt(2, new Point2d(left_cir.StartPoint.X, left_cir.StartPoint.Y), left_cir.GetArcBulge(), 0, 0);
+            poly.AddVertexAt(3, new Point2d(left_cir.EndPoint.X, left_cir.EndPoint.Y), 0, 0, 0);
+            poly.LayerId = c.LayerId;
+            tr.BlockTableRecordCurrentSpace.AppendEntity(poly);
+            tr.AddNewlyCreatedDBObject(poly, true);
+            c.Erase();
+            return poly;
+        }
+
+        public static Polyline EllipseToPoly(this QuickTransaction tr, Ellipse c) {
+            return null;
+        }
+
+        public static Polyline SplineToPoly(this QuickTransaction tr, Spline c) {
+            var p = c.ToPolyline();
+            tr.BlockTableRecordCurrentSpace.AppendEntity(p);
+            tr.AddNewlyCreatedDBObject(p,true);
+            c.Erase();
+            return (Polyline) p;
         }
 
         public static Polyline ArcToPoly(this QuickTransaction tr, Arc arc) {

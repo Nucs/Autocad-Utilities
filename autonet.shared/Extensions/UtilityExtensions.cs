@@ -181,7 +181,12 @@ namespace autonet.Extensions {
                 deltaAng += 2 * Math.PI;
             return Math.Tan(deltaAng * 0.25);
         }
-
+        public static double GetArcBulge(this CircularArc3d arc) {
+            double deltaAng = arc.EndAngle - arc.StartAngle;
+            if (deltaAng < 0)
+                deltaAng += 2 * Math.PI;
+            return Math.Tan(deltaAng * 0.25);
+        }
         public static List<ObjectId> JoinLines(BlockTableRecord btr, ObjectId id) {
             var ids = new List<ObjectId>();
 

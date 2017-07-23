@@ -30,6 +30,9 @@ namespace AdamsLair.WinForms.ColorControls
 				this.ClientRectangle.Width - 4,
 				this.ClientRectangle.Height - 4); }
 		}
+        /// <summary>
+        ///     Returns selected color.
+        /// </summary>
 		public Color Color
 		{
 			get { return this.upperColor; }

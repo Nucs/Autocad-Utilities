@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using autonet.Extensions;
 using autonet.Settings;
+using Newtonsoft.Json;
 
 namespace autonet {
     public class QQConfigurationFile : SettingsBag {
@@ -36,6 +38,8 @@ namespace autonet {
 
         public bool ConvertAllToPolyline { get; set; }
         public bool JoinPolylines { get; set; }
+
+        [JsonConverter(typeof(DrawingColorConverter))]
         public Color Color { get; set; }
 
         public bool EnabledLayer { get; set; }

@@ -27,7 +27,7 @@ namespace autonet {
             foreach (var line in data) {
                 try {
                     var sys = Path.HasExtension(line) ? (FileSystemInfo)new FileInfo(line) : (FileSystemInfo)new DirectoryInfo(line);
-                    if (Uri.IsWellFormedUriString(line, UriKind.Absolute)==false)
+                    if (Path.IsPathRooted(line)== false)
                         throw new InvalidOperationException();
                 } catch {
                     MessageBox.Show("An invalid path was found:\n" + line);

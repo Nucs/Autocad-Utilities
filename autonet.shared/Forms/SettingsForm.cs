@@ -210,8 +210,19 @@ namespace autonet.Forms {
                 case ColorShowBox clr:
                     if (setprop.PropertyType != typeof(Color) && !ConvertHelper.CanChangeType(setprop.PropertyType, typeof(Color)))
                         throw new InvalidOperationException($"Error binding {typeof(TCtrl).Name} to {Settings.GetType().Name}.{propertyname}, Cannot bind string value to {setprop.PropertyType.Name} value.");
+                    binder = new ActionBindable(Settings, clr,
+                        (s, c) => setprop.SetValue(s, ((ColorShowBox)c).Color),
+                        (c) => ((ColorShowBox)c).Color,
+                        (s, c) => {
+                            ((ColorShowBox)c).Color = (Color) ConvertEx.To(setprop.GetValue(s), typeof(Color));
+                            c.Invalidate();
+                        },
+                        (s) => setprop.GetValue(s)
+                    );
                     binder = new Bindable(Settings, ctrl, setprop, ctrl.GetType().GetProperty(nameof(clr.Color)));
                     break;
+                default:
+                    throw new NotSupportedException("This control is not supported for automatic binding.");
             }
 
             Bind(binder);

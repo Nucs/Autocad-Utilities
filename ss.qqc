@@ -1,0 +1,18 @@
+{
+  "Data": {},
+  "Path": "C:\\Users\\Eli\\Desktop\\autocad\\autoload\\ss.qqc",
+  "Name": "ss",
+  "Layer": "0",
+  "Width": 4.0,
+  "Thickness": 4.0,
+  "Linetype": "ByBlock",
+  "ConvertAllToPolyline": true,
+  "JoinPolylines": false,
+  "Color": -16013580,
+  "EnabledLayer": false,
+  "EnabledColor": true,
+  "EnabledWidth": true,
+  "EnabledThickness": true,
+  "EnabledLinetype": false,
+  "ColorLabel": ""
+}

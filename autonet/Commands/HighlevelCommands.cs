@@ -4,31 +4,54 @@ using autonet.Extensions;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
 using Linq.Extras;
 using MoreLinq;
+using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+using System;
+using System.Collections.Generic;
 
 namespace autonet.Forms {
     public static class HighlevelCommands {
+
+
+
+
+
         /// <summary>
         ///     Custom method to make my work faster..
         /// </summary>
         [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void QuickQuackCommand() {
             var qc = QQManager.Selected;
-            //todo Paste.
 
             var set = Quick.GetImpliedOrSelect();
             if (set == null || set.Count == 0)
                 return;
-
+            
             using (var tr = new QuickTransaction()) {
                 //PromptSelectionOptions opts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to apply magic dust on: ", MessageForRemoval = "\n...Remove cables: "};
                 //var set = tr.GetImpliedOrSelect(opts);
-                var objs = set.Cast<SelectedObject>().Select(so => so.ObjectId).ToArray();
-                foreach (var oid in objs) {
+                List<ObjectId> polylines = new List<ObjectId>();
+                List<ObjectId> linearc= new List<ObjectId>();
+                ObjectId[] objs = set.Cast<SelectedObject>().Select(so => so.ObjectId).ToArray();
+                for (var i = 0; i < objs.Length; i++) {
+                    var oid = objs[i];
                     var o = tr.GetObject(oid, true);
+
+                    if (qc.ConvertAllToPolyline && o is Polyline == false) {
+                        var poly = tr.ConvertToPolyline(o);
+                        if (poly!=null) //if was successful
+                            objs[i] = (o = poly).ObjectId;
+                    }
+
                     //layer
                     if (qc.EnabledLayer)
                         o.Layer = qc.Layer;
@@ -54,7 +77,20 @@ namespace autonet.Forms {
                         }
                         o.Color = Color.FromColor(qc.Color);
                     }
-                    _postcolor:;
+                    if (qc.EnabledWidth && o is Polyline p) {
+                        p.SetGlobalWidth(qc.Width); 
+                    }
+
+                    if (qc.EnabledThickness) {
+                        o.GetType().GetProperty("Thickness")?.SetValue(o, qc.Thickness,null);
+                    }
+
+                    _postcolor:
+                    ;
+                }
+
+                if (qc.EnabledWidth) {
+                    
                 }
 /*
                 if (tr.LayerTable.Has("EL-LT-CABL-160")) {
@@ -88,8 +124,11 @@ namespace autonet.Forms {
 
         [CommandMethod("Quicky", "asd", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void DoitCommand() {
-                var f = new QQForm();
-                f.ShowDialog();
+            var imp = Quick.GetImpliedOrSelect();
+            using (var tr = new QuickTransaction()) {
+
+                tr.Commit();
+            }
         }
 
         [CommandMethod("Quicky", "ws", CommandFlags.UsePickSet | CommandFlags.Redraw)]
