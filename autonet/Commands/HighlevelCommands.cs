@@ -6,16 +6,15 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
+using Linq.Extras;
 using MoreLinq;
 
 namespace autonet.Forms {
     public static class HighlevelCommands {
-
-        
         /// <summary>
         ///     Custom method to make my work faster..
         /// </summary>
-        [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void QuickQuackCommand() {
             var qc = QQManager.Selected;
             //todo Paste.
@@ -72,12 +71,12 @@ namespace autonet.Forms {
             }
         }
 
-        [CommandMethod("Quicky", "qqconfig", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "qqconfig", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal)]
         public static void QuickConfigurationCommand() {
             QQManager.OpenConfiguration();
         }
 
-        [CommandMethod("Quicky", "qqselect", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "qqselect", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal)]
         public static void QuickSelectCommand() {
             QQManager.Select();
         }
@@ -93,7 +92,7 @@ namespace autonet.Forms {
                 f.ShowDialog();
         }
 
-        [CommandMethod("Quicky", "ws", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "ws", CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void WindowSwapCommand() {
             var imp = Quick.GetImpliedOrSelect();
             if (imp == null) {
@@ -111,7 +110,26 @@ namespace autonet.Forms {
             Quick.SetSelected(rest);
         }
 
-        [CommandMethod("Quicky", "wsw", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "ww", CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void WindowOnlyInsideCommand() {
+            var imp = Quick.GetImpliedOrSelect();
+            if (imp == null) {
+                Quick.WriteLine("[ww] No objects were selected.");
+                return;
+            }
+
+            Quick.ClearSelected();
+            var all = Quick.GetImpliedOrSelect();
+            if (all == null) {
+                Quick.WriteLine("[ww] Failed selecting Other.");
+                return;
+            }
+
+            var rest = all.Cast<SelectedObject>().IntersectBy(imp.Cast<SelectedObject>(), o => o.ObjectId.Handle.Value).Select(o => o.ObjectId).ToSelectionSet(SelectionMethod.Crossing);
+            Quick.SetSelected(rest);
+        }
+
+        [CommandMethod("Quicky", "wsw", CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void WindowSwapSelectCommand() {
             var imp = Quick.GetImpliedOrSelect();
             if (imp == null) {

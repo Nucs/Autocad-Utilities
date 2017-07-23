@@ -16,11 +16,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\ConvertHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\ExceptBy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\IntersectBy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\MoreEnumerable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\ObjectExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\PathExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\SelectionSetExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\UtilityExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\XEqualityComparer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Forms\SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
