@@ -177,5 +177,14 @@ namespace Common {
                 return Paths.NormalizePath(obj).GetHashCode();
             }
         }
+        public class FileInfoPathEqualityComparer : IEqualityComparer<FileSystemInfo> {
+            public bool Equals(FileSystemInfo x, FileSystemInfo y) {
+                return Paths.CompareTo(x, y);
+            }
+
+            public int GetHashCode(FileSystemInfo obj) {
+                return Paths.NormalizePath(obj.FullName).GetHashCode();
+            }
+        }
     }
 }

@@ -10,12 +10,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Resources\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Settings\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Application.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)QuickCommands.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\QQSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\QuickySettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)lsp\C2P.1.lsp" />

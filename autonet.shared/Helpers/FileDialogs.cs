@@ -22,11 +22,13 @@ namespace autonet {
             return fileDialog.ShowDialog() == DialogResult.OK ? new FileInfo(fileDialog.FileName) : null;
         }
 
-        public static FileInfo GetFile(FileFilter filter = null, bool checkFileExists = true, bool restoreDirecory = true, bool MultiSelect = false) {
+        public static FileInfo GetFile(FileFilter filter = null, bool checkFileExists = true, bool restoreDirecory = true, bool MultiSelect = false, string initialdirectory = null) {
             using (var fd = new OpenFileDialog()) {
                 fd.RestoreDirectory = restoreDirecory;
                 fd.CheckFileExists = checkFileExists;
                 fd.CheckPathExists = checkFileExists;
+                if (initialdirectory!=null)
+                    fd.InitialDirectory = initialdirectory;
                 fd.Multiselect = MultiSelect;
                 fd.AddExtension = true;
                 if (filter != null && filter.Count > 0) {

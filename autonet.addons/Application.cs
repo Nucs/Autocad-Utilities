@@ -17,15 +17,11 @@ using App = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 
 namespace autonet {
     public class Application : IExtensionApplication {
-        public static QuickySettings Settings = JsonConfiguration.Load<QuickySettings>();
 
         public void Initialize() {
             try {
                 //Load Directories!
                 Paths.ConfigDirectory.EnsureCreated();
-                Console.WriteLine(Settings.Test);
-                Settings.Save();
-                Quick.Write(" "+Settings.Test);
                 LspLoader.Load("C2P");
                 LspLoader.Load("E2P");
             } catch (System.Exception e) {

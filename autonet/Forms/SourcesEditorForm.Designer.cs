@@ -1,8 +1,6 @@
-﻿using autonet.Settings;
-
-namespace autonet.Forms
+﻿namespace autonet
 {
-    partial class QQForm : SettingsForm<QQSettings>
+    partial class SourcesEditorForm
     {
         /// <summary>
         /// Required designer variable.
@@ -30,14 +28,24 @@ namespace autonet.Forms
         /// </summary>
         private void InitializeComponent()
         {
+            this.textBox1 = new System.Windows.Forms.TextBox();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnRevert = new System.Windows.Forms.Button();
-            this.PGrid = new AdamsLair.WinForms.PropertyEditing.PropertyGrid();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(12, 12);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBox1.Size = new System.Drawing.Size(491, 351);
+            this.textBox1.TabIndex = 0;
             // 
             // btnSave
             // 
-            this.btnSave.Location = new System.Drawing.Point(316, 42);
+            this.btnSave.Location = new System.Drawing.Point(12, 369);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(75, 23);
             this.btnSave.TabIndex = 1;
@@ -47,7 +55,7 @@ namespace autonet.Forms
             // 
             // btnRevert
             // 
-            this.btnRevert.Location = new System.Drawing.Point(316, 13);
+            this.btnRevert.Location = new System.Drawing.Point(347, 369);
             this.btnRevert.Name = "btnRevert";
             this.btnRevert.Size = new System.Drawing.Size(75, 23);
             this.btnRevert.TabIndex = 2;
@@ -55,38 +63,38 @@ namespace autonet.Forms
             this.btnRevert.UseVisualStyleBackColor = true;
             this.btnRevert.Click += new System.EventHandler(this.btnRevert_Click);
             // 
-            // PGrid
+            // btnCancel
             // 
-            this.PGrid.AllowDrop = true;
-            this.PGrid.AutoScroll = true;
-            this.PGrid.Location = new System.Drawing.Point(13, 13);
-            this.PGrid.Name = "PGrid";
-            this.PGrid.ReadOnly = false;
-            this.PGrid.ShowNonPublic = false;
-            this.PGrid.Size = new System.Drawing.Size(297, 577);
-            this.PGrid.SortEditorsByName = true;
-            this.PGrid.SplitterPosition = 119;
-            this.PGrid.SplitterRatio = 0.4F;
-            this.PGrid.TabIndex = 3;
+            this.btnCancel.Location = new System.Drawing.Point(428, 369);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 3;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
-            // QQForm
+            // ListEditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(406, 602);
-            this.Controls.Add(this.PGrid);
+            this.ClientSize = new System.Drawing.Size(515, 397);
+            this.ControlBox = false;
+            this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnRevert);
             this.Controls.Add(this.btnSave);
-            this.Name = "QQForm";
-            this.Text = "QQForm";
-            this.Load += new System.EventHandler(this.QQForm_Load);
+            this.Controls.Add(this.textBox1);
+            this.Name = "SourcesEditorForm";
+            this.Text = "Sources Editor";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
+
+        private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnRevert;
-        public AdamsLair.WinForms.PropertyEditing.PropertyGrid PGrid;
+        private System.Windows.Forms.Button btnCancel;
     }
 }

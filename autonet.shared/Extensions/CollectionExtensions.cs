@@ -40,5 +40,10 @@ namespace autonet.Extensions {
             
             return ss;
         }
+
+        public static List<T> LInsert<T>(this List<T> l, int index, T obj) {
+            l.Insert(index, obj);
+            return l;
+        }
     }
 }

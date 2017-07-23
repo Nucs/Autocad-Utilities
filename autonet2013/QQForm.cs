@@ -15,7 +15,6 @@ namespace autonet.Forms {
         public override QQSettings Settings { get; } = JsonConfiguration.Load<QQSettings>();
         public QQForm() : base() {
             InitializeComponent();
-            Bind(this.textBox1, qq=>qq.texty);
         }
 
         private void QQForm_Load(object sender, EventArgs e) {

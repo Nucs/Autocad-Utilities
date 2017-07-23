@@ -1,0 +1,27 @@
+{
+  "Data": {},
+  "Path": "C:\\Users\\Eli\\Desktop\\autocad\\autoload\\dsaa.qqc",
+  "Name": "",
+  "Layer": "0",
+  "Width": 5.0,
+  "Thickness": 0.0,
+  "Linetype": "ByBlock",
+  "ConvertAllToPolyline": false,
+  "JoinPolylines": false,
+  "Color": {
+    "R": 0,
+    "G": 0,
+    "B": 0,
+    "A": 0,
+    "IsKnownColor": false,
+    "IsEmpty": true,
+    "IsNamedColor": false,
+    "IsSystemColor": false,
+    "Name": "0"
+  },
+  "EnabledLayer": false,
+  "EnabledColor": false,
+  "EnabledWidth": false,
+  "EnabledThickness": false,
+  "EnabledLinetype": true
+}

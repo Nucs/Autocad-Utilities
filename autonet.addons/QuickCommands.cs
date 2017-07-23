@@ -13,33 +13,7 @@ using YourCAD.Utilities;
 namespace autonet {
     public static class QuickCommands {
 
-        /// <summary>
-        ///     Custom method to make my work faster..
-        /// </summary>
-        [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
-        public static void QuickCableCommand() {
-            using (var tr = new QuickTransaction()) {
-                tr.WriteLine(Application.Settings.FileName);
-                PromptSelectionOptions opts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to apply magic dust on: ", MessageForRemoval = "\n...Remove cables: "};
-                var set = tr.GetImpliedOrSelect(opts);
-                if (set == null || set.Count == 0)
-                    return;
-
-                if (tr.LayerTable.Has("EL-LT-CABL-160")) {
-                    var lyr = tr.LayerTable["EL-LT-CABL-160"];
-                    //check the layer and apply.
-                    foreach (var e in set.GetObjectIds().Select(oid => oid.GetObject(tr))) {
-                        e.SetLayerId(lyr, true);
-                        //e.DowngradeOpen();
-                    }
-                }
-                tr.Commit();
-
-                tr.Command("_.pedit", "_m", set, "_y", "_j", "", "_j", "", "_j", "", "_w", "0.2", "");
-            }
-        }
-
-        [CommandMethod("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         /*/// <summary>
         ///     does hbreg to selection
         /// </summary>

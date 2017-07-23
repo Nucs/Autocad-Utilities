@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using autonet.Extensions;
 using autonet.Settings;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -148,6 +150,13 @@ namespace autonet {
         public static PromptSelectionResult SelectPrevious() {
             return Editor.SelectPrevious();
         }
+        public static ObjectId? SelectSingle() {
+            var ret = Editor.GetEntity("Select a single object:");
+            if (ret.Status == PromptStatus.OK) {
+                return ret.ObjectId;
+            }
+            return null;
+        }
 
         /// <summary>
         ///     Execute a command much a like in LISP. Instead of spaces write commas.<br></br>
@@ -243,6 +252,24 @@ namespace autonet {
 
         public static void ClearSelected() {
             Quick.SetImpliedSelection(selectionSet: null);
+        }
+
+        public static List<LinetypeTableRecord> Linetypes {
+            get {
+                using (var tr = new QuickTransaction())
+                    return tr.LineTable.Cast<ObjectId>()
+                        .Select(o => tr.GetObject(o, OpenMode.ForRead) as LinetypeTableRecord)
+                        .ToList();
+            }
+        }
+
+        public static List<LayerTableRecord> Layers {
+            get {
+                using (var tr = new QuickTransaction())
+                    return tr.LayerTable.Cast<ObjectId>()
+                        .Select(o => tr.GetObject(o, OpenMode.ForRead) as LayerTableRecord)
+                        .ToList();
+            }
         }
     }
 }

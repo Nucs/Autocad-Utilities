@@ -11,19 +11,20 @@ namespace autonet {
         private BlockTable _btbl;
         private BlockTableRecord _btr;
         private LayerTable _lytbl;
+        private LinetypeTable _lttbl;
         public Database Db;
 
         private bool disposed;
         public Document Doc;
         public Document MdiDoc;
-        private Editor Editor;
+        public Editor Editor;
         public Transaction Transaction;
 
         public QuickTransaction() {
 #if AUTOCAD13 
             Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
 #else
-            Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.CurrentDocument;
+            Doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
 #endif
             Db = Doc.Database;
             Editor = Doc.Editor;
@@ -58,6 +59,19 @@ namespace autonet {
                 }
             }
         }
+        public LinetypeTable LineTable {
+            get {
+                if (disposed)
+                    return null;
+                if (_lttbl != null)
+                    return _lttbl;
+                lock (this) {
+                    if (disposed)
+                        return null;
+                    return _lttbl ?? (_lttbl = (LinetypeTable) Transaction.GetObject(Db.LinetypeTableId, OpenMode.ForRead));
+                }
+            }
+        }
 
         public BlockTable BlockTable {
             get {
@@ -86,7 +100,9 @@ namespace autonet {
                 _btr = null;
                 _lytbl = null;
                 if (Transaction?.IsDisposed == false)
-                    Transaction.Dispose();
+                    try {
+                        Transaction.Dispose();
+                    } catch (InvalidOperationException) { }
             }
         }
 
@@ -127,7 +143,9 @@ namespace autonet {
         public void Commit() {
             if (__hascommited)
                 throw new InvalidOperationException("Can't commit twice with the same transaction! Autocad will crash.");
-            Transaction.Commit();
+            try {
+                Transaction.Commit();
+            } catch (InvalidOperationException) { }
             __hascommited = true;
         }
 

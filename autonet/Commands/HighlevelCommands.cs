@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+using System.Threading;
 using autonet.Extensions;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.GraphicsInterface;
@@ -8,16 +10,87 @@ using MoreLinq;
 
 namespace autonet.Forms {
     public static class HighlevelCommands {
+
+        
+        /// <summary>
+        ///     Custom method to make my work faster..
+        /// </summary>
+        [CommandMethod("Quicky", "qq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        public static void QuickQuackCommand() {
+            var qc = QQManager.Selected;
+            //todo Paste.
+
+            var set = Quick.GetImpliedOrSelect();
+            if (set == null || set.Count == 0)
+                return;
+
+            using (var tr = new QuickTransaction()) {
+                //PromptSelectionOptions opts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to apply magic dust on: ", MessageForRemoval = "\n...Remove cables: "};
+                //var set = tr.GetImpliedOrSelect(opts);
+                var objs = set.Cast<SelectedObject>().Select(so => so.ObjectId).ToArray();
+                foreach (var oid in objs) {
+                    var o = tr.GetObject(oid, true);
+                    //layer
+                    if (qc.EnabledLayer)
+                        o.Layer = qc.Layer;
+                    //linetype
+                    if (qc.EnabledLinetype)
+                        o.Linetype = qc.Linetype;
+                    //color
+                    if (qc.EnabledColor) {
+                        if (!string.IsNullOrEmpty(qc.ColorLabel)) {
+                            var block = qc.ColorLabel == "BYBLOCK";
+                            var layer = qc.ColorLabel == "BYLAYER";
+                            if (block) {
+                                o.ColorIndex = 0;
+                                goto _postcolor;
+                            }
+                            if (layer) {
+                                o.ColorIndex = 256;
+                                goto _postcolor;
+                            }
+                            if (!block && !layer) {
+                                goto _postcolor;
+                            }
+                        }
+                        o.Color = Color.FromColor(qc.Color);
+                    }
+                    _postcolor:;
+                }
+/*
+                if (tr.LayerTable.Has("EL-LT-CABL-160")) {
+                    var lyr = tr.LayerTable["EL-LT-CABL-160"];
+                    //check the layer and apply.
+                    foreach (var e in set.GetObjectIds().Select(oid => oid.GetObject(tr))) {
+                        e.SetLayerId(lyr, true);
+                        //e.DowngradeOpen();
+                    }
+                }*/
+                tr.Commit();
+
+                //tr.Command("_.pedit", "_m", set, "_y", "_j", "", "_j", "", "_j", "", "_w", "0.2", "");
+            }
+        }
+
+        [CommandMethod("Quicky", "qqconfig", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        public static void QuickConfigurationCommand() {
+            QQManager.OpenConfiguration();
+        }
+
+        [CommandMethod("Quicky", "qqselect", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        public static void QuickSelectCommand() {
+            QQManager.Select();
+        }
+
+        [CommandMethod("Quicky", "qqnew", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.NoPaperSpace)]
+        public static void QuickNewCommand() {
+            QQManager.CreateNewConfig();
+        }
+
         [CommandMethod("Quicky", "asd", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void DoitCommand() {
-            var imp = Quick.GetImpliedOrSelect();
-            using (var tr = new QuickTransaction()) {
-                var c = imp?.Count > 0 ? (Entity) imp[0].ObjectId.GetObject(tr) : (Entity) new Circle();
-                var f = new QQForm(c);
+                var f = new QQForm();
                 f.ShowDialog();
-                ;
-                tr.Commit();
-            }
         }
 
         [CommandMethod("Quicky", "ws", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
@@ -31,6 +104,24 @@ namespace autonet.Forms {
             var all = Quick.SelectAll();
             if (all == null) {
                 Quick.WriteLine("[ws] Failed selecting All.");
+                return;
+            }
+
+            var rest = all.Cast<SelectedObject>().ExceptBy(imp.Cast<SelectedObject>(), o => o.ObjectId.Handle.Value).Select(o => o.ObjectId).ToSelectionSet(SelectionMethod.Crossing);
+            Quick.SetSelected(rest);
+        }
+
+        [CommandMethod("Quicky", "wsw", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        public static void WindowSwapSelectCommand() {
+            var imp = Quick.GetImpliedOrSelect();
+            if (imp == null) {
+                Quick.WriteLine("[wsw] No objects were selected.");
+                return;
+            }
+            Quick.ClearSelected();
+            var all = Quick.GetImpliedOrSelect();
+            if (all == null) {
+                Quick.WriteLine("[wsw] Failed selecting Other.");
                 return;
             }
 

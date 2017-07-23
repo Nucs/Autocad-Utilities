@@ -1,586 +1,486 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Reflection;
+using System.Windows.Forms;
+using AdamsLair.WinForms.Properties;
 
-namespace AdamsLair.WinForms.PropertyEditing
-{
-	public class MemberwisePropertyEditor : GroupedPropertyEditor
-	{
-		public delegate bool AutoMemberPredicate(MemberInfo member, bool showNonPublic);
-		public delegate void PropertyValueSetter(PropertyInfo property, IEnumerable<object> targetObjects, IEnumerable<object> values);
-		public delegate void FieldValueSetter(FieldInfo field, IEnumerable<object> targetObjects, IEnumerable<object> values);
+namespace AdamsLair.WinForms.PropertyEditing {
+    public class MemberwisePropertyEditor : GroupedPropertyEditor {
+        public delegate bool AutoMemberPredicate(MemberInfo member, bool showNonPublic);
 
-		private	bool	buttonIsCreate	= false;
-		private	AutoMemberPredicate				memberPredicate			= null;
-		private	Predicate<MemberInfo>			memberAffectsOthers		= null;
-		private	PropertyValueSetter				memberPropertySetter	= null;
-		private	FieldValueSetter				memberFieldSetter		= null;
+        public delegate void FieldValueSetter(FieldInfo field, IEnumerable<object> targetObjects, IEnumerable<object> values);
 
-		public override object DisplayedValue
-		{
-			get { return this.GetValue().FirstOrDefault(); }
-		}
-		public AutoMemberPredicate MemberPredicate
-		{
-			get { return this.memberPredicate; }
-			set
-			{
-				if (value == null) value = DefaultMemberPredicate;
-				if (this.memberPredicate != value)
-				{
-					this.memberPredicate = value;
-					if (this.ContentInitialized) this.InitContent();
-				}
-			}
-		}
-		public Predicate<MemberInfo> MemberAffectsOthers
-		{
-			get { return this.memberAffectsOthers; }
-			set
-			{
-				if (value == null) value = DefaultMemberAffectsOthers;
-				if (this.memberAffectsOthers != value)
-				{
-					this.memberAffectsOthers = value;
-					if (this.ContentInitialized) this.InitContent();
-				}
-			}
-		}
-		public PropertyValueSetter MemberPropertySetter
-		{
-			get { return this.memberPropertySetter; }
-			set
-			{
-				if (value == null) value = DefaultPropertySetter;
-				this.memberPropertySetter = value;
-			}
-		}
-		public FieldValueSetter MemberFieldSetter
-		{
-			get { return this.memberFieldSetter; }
-			set
-			{
-				if (value == null) value = DefaultFieldSetter;
-				this.memberFieldSetter = value;
-			}
-		}
+        public delegate void PropertyValueSetter(PropertyInfo property, IEnumerable<object> targetObjects, IEnumerable<object> values);
 
-		public MemberwisePropertyEditor()
-		{
-			this.Hints |= HintFlags.HasButton | HintFlags.ButtonEnabled;
-			this.memberPredicate = DefaultMemberPredicate;
-			this.memberAffectsOthers = DefaultMemberAffectsOthers;
-			this.memberPropertySetter = DefaultPropertySetter;
-			this.memberFieldSetter = DefaultFieldSetter;
-		}
+        private bool buttonIsCreate;
+        private Predicate<MemberInfo> memberAffectsOthers;
+        private FieldValueSetter memberFieldSetter;
+        private AutoMemberPredicate memberPredicate;
+        private PropertyValueSetter memberPropertySetter;
 
-		public override void InitContent()
-		{
-			this.BeginUpdate();
-			{
-				// Clear previous contents and invoke base method
-				this.ClearContent();
-				base.InitContent();
+        public MemberwisePropertyEditor() {
+            Hints |= HintFlags.HasButton | HintFlags.ButtonEnabled;
+            memberPredicate = DefaultMemberPredicate;
+            memberAffectsOthers = DefaultMemberAffectsOthers;
+            memberPropertySetter = DefaultPropertySetter;
+            memberFieldSetter = DefaultFieldSetter;
+        }
 
-				// Generate and add property editors for the current type
-				if (this.EditedType != null)
-				{
-					IEnumerable<object> valueQuery = this.GetValue();
-					object[] values = (valueQuery != null ? valueQuery.ToArray() : null);
-					this.BeforeAutoCreateEditors();
-					foreach (MemberInfo member in this.QueryEditedMembers())
-					{
-						this.AddEditorForMember(member, values);
-					}
-				}
-			}
-			this.EndUpdate();
+        public override object DisplayedValue => GetValue().FirstOrDefault();
 
-			// Update all values for this editor and its children
-			this.PerformGetValue();
-		}
-		protected void ReInitContent(IEnumerable<PropertyEditor> updateEditors)
-		{
-			if (this.EditedType == null) return;
+        public AutoMemberPredicate MemberPredicate {
+            get => memberPredicate;
+            set {
+                if (value == null) value = DefaultMemberPredicate;
+                if (memberPredicate != value) {
+                    memberPredicate = value;
+                    if (ContentInitialized) InitContent();
+                }
+            }
+        }
 
-			this.BeginUpdate();
-			{
-				object[] values = this.GetValue().ToArray();
-				foreach (PropertyEditor editor in updateEditors)
-				{
-					this.AddEditorForMember(editor.EditedMember, values, editor);
-				}
-			}
-			this.EndUpdate();
+        public Predicate<MemberInfo> MemberAffectsOthers {
+            get => memberAffectsOthers;
+            set {
+                if (value == null) value = DefaultMemberAffectsOthers;
+                if (memberAffectsOthers != value) {
+                    memberAffectsOthers = value;
+                    if (ContentInitialized) InitContent();
+                }
+            }
+        }
 
-			// Update all values for this editor and its children
-			this.PerformGetValue();
-		}
+        public PropertyValueSetter MemberPropertySetter {
+            get => memberPropertySetter;
+            set {
+                if (value == null) value = DefaultPropertySetter;
+                memberPropertySetter = value;
+            }
+        }
 
-		public PropertyEditor AddEditorForMember(MemberInfo member, IEnumerable<object> values = null, PropertyEditor replaceOld = null)
-		{
-			if (!(member is FieldInfo) && !(member is PropertyInfo))
-			{
-				throw new ArgumentException("Only PropertyInfo and FieldInfo members are supported");
-			}
+        public FieldValueSetter MemberFieldSetter {
+            get => memberFieldSetter;
+            set {
+                if (value == null) value = DefaultFieldSetter;
+                memberFieldSetter = value;
+            }
+        }
 
-			PropertyEditor e;
-			Type editType = ReflectTypeForMember(member, values ?? this.GetValue());
-			e = this.AutoCreateMemberEditor(member);
-			if (e == null) e = this.ParentGrid.CreateEditor(editType, this);
-			if (e == null) return null;
+        public override void InitContent() {
+            BeginUpdate();
+            {
+                // Clear previous contents and invoke base method
+                ClearContent();
+                base.InitContent();
 
-			e.BeginUpdate();
-			{
-				if (member is PropertyInfo)
-				{
-					PropertyInfo property = member as PropertyInfo;
-					e.Getter = this.CreatePropertyValueGetter(property);
-					e.Setter = property.CanWrite ? this.CreatePropertyValueSetter(property) : null;
-					e.PropertyName = property.Name;
-					e.EditedMember = property;
-					e.NonPublic = !this.memberPredicate(property, false);
-				}
-				else if (member is FieldInfo)
-				{
-					FieldInfo field = member as FieldInfo;
-					e.Getter = this.CreateFieldValueGetter(field);
-					e.Setter = this.CreateFieldValueSetter(field);
-					e.PropertyName = field.Name;
-					e.EditedMember = field;
-					e.NonPublic = !this.memberPredicate(field, false);
-				}
+                // Generate and add property editors for the current type
+                if (EditedType != null) {
+                    var valueQuery = GetValue();
+                    var values = valueQuery != null ? valueQuery.ToArray() : null;
+                    BeforeAutoCreateEditors();
+                    foreach (var member in QueryEditedMembers())
+                        AddEditorForMember(member, values);
+                }
+            }
+            EndUpdate();
 
-				if (replaceOld != null)
-				{
-					this.AddPropertyEditor(e, replaceOld);
-					this.RemovePropertyEditor(replaceOld);
-					replaceOld.Dispose();
-				}
-				else
-				{
-					this.AddPropertyEditor(e);
-				}
-				this.ParentGrid.ConfigureEditor(e);
-			}
-			e.EndUpdate();
+            // Update all values for this editor and its children
+            PerformGetValue();
+        }
 
-			return e;
-		}
-		protected override void VerifyReflectedTypeEditors(IEnumerable<object> values)
-		{
-			if (this.EditedType == null) return;
-			if (!this.ContentInitialized) return;
+        protected void ReInitContent(IEnumerable<PropertyEditor> updateEditors) {
+            if (EditedType == null) return;
 
-			List<PropertyEditor> invalidEditors = null;
-			foreach (PropertyEditor editor in this.ChildEditors)
-			{
-				if (editor.EditedMember == null) continue;
-				if (editor.EditedType == null) continue;
-				if (!this.IsAutoCreateMember(editor.EditedMember)) continue;
+            BeginUpdate();
+            {
+                var values = GetValue().ToArray();
+                foreach (var editor in updateEditors)
+                    AddEditorForMember(editor.EditedMember, values, editor);
+            }
+            EndUpdate();
 
-				Type reflectedType = this.ReflectTypeForMember(editor.EditedMember, values);
-				if (reflectedType != editor.EditedType)
-				{
-					if (invalidEditors == null) invalidEditors = new List<PropertyEditor>();
-					invalidEditors.Add(editor);
-				}
-			}
+            // Update all values for this editor and its children
+            PerformGetValue();
+        }
 
-			if (invalidEditors != null)
-			{
-				this.ReInitContent(invalidEditors);
-			}
-		}
-		/// <summary>
-		/// Determines the Type to use as a basis for generating a PropertyEditor for the specified member
-		/// by evaluating the members current value and static Type.
-		/// </summary>
-		/// <param name="member"></param>
-		/// <param name="values"></param>
-		/// <returns></returns>
-		protected Type ReflectTypeForMember(MemberInfo member, IEnumerable<object> values)
-		{
-			if (member is FieldInfo)
-			{
-				FieldInfo field = member as FieldInfo;
-				if (values != null)
-					return PropertyEditor.ReflectDynamicType(field.FieldType, values.Where(v => v != null).Select(v => field.GetValue(v)));
-				else
-					return field.FieldType;
-			}
-			else if (member is PropertyInfo)
-			{
-				PropertyInfo property = member as PropertyInfo;
-				if (values != null)
-				{
-					List<object> propertyValues = new List<object>();
-					foreach (object obj in values)
-					{
-						if (obj == null) continue;
-						try
-						{
-							object value = property.GetValue(obj, null);
-							propertyValues.Add(value);
-						}
-						catch (TargetInvocationException) { }
-					}
-					return PropertyEditor.ReflectDynamicType(property.PropertyType, propertyValues);
-				}
-				else
-				{
-					return property.PropertyType;
-				}
-			}
-			else
-				throw new ArgumentException("Only PropertyInfo and FieldInfo members are supported");
-		}
+        public PropertyEditor AddEditorForMember(MemberInfo member, IEnumerable<object> values = null, PropertyEditor replaceOld = null) {
+            if (!(member is FieldInfo) && !(member is PropertyInfo))
+                throw new ArgumentException("Only PropertyInfo and FieldInfo members are supported");
 
-		protected IEnumerable<MemberInfo> QueryEditedMembers()
-		{
-			PropertyInfo[] propArr = this.EditedType.GetProperties(
-				BindingFlags.Instance | 
-				BindingFlags.Public | 
-				BindingFlags.NonPublic);
-			FieldInfo[] fieldArr = this.EditedType.GetFields(
-				BindingFlags.Instance | 
-				BindingFlags.Public | 
-				BindingFlags.NonPublic);
+            PropertyEditor e;
+            var editType = ReflectTypeForMember(member, values ?? GetValue());
+            e = AutoCreateMemberEditor(member);
+            if (e == null) e = ParentGrid.CreateEditor(editType, this);
+            if (e == null) return null;
 
-			if (ParentGrid.SortEditorsByName)
-			{
-				return (
+            e.BeginUpdate();
+            {
+                if (member is PropertyInfo) {
+                    var property = member as PropertyInfo;
+                    e.Getter = CreatePropertyValueGetter(property);
+                    e.Setter = property.CanWrite ? CreatePropertyValueSetter(property) : null;
+                    e.PropertyName = property.Name;
+                    e.EditedMember = property;
+                    e.NonPublic = !memberPredicate(property, false);
+                } else if (member is FieldInfo) {
+                    var field = member as FieldInfo;
+                    e.Getter = CreateFieldValueGetter(field);
+                    e.Setter = CreateFieldValueSetter(field);
+                    e.PropertyName = field.Name;
+                    e.EditedMember = field;
+                    e.NonPublic = !memberPredicate(field, false);
+                }
 
-					from p in propArr
-					where p.CanRead && p.GetIndexParameters().Length == 0 && this.IsAutoCreateMember(p)
-					orderby GetTypeHierarchyLevel(p.DeclaringType) ascending, p.Name
-					select p
+                if (replaceOld != null) {
+                    AddPropertyEditor(e, replaceOld);
+                    RemovePropertyEditor(replaceOld);
+                    replaceOld.Dispose();
+                } else {
+                    AddPropertyEditor(e);
+                }
+                ParentGrid.ConfigureEditor(e);
+            }
+            e.EndUpdate();
 
-					).Concat((IEnumerable<MemberInfo>)
+            return e;
+        }
 
-					from f in fieldArr
-					where this.IsAutoCreateMember(f)
-					orderby GetTypeHierarchyLevel(f.DeclaringType) ascending, f.Name
-					select f
+        protected override void VerifyReflectedTypeEditors(IEnumerable<object> values) {
+            if (EditedType == null) return;
+            if (!ContentInitialized) return;
 
-					);
-			}
-			else
-			{
-				return (
+            List<PropertyEditor> invalidEditors = null;
+            foreach (var editor in ChildEditors) {
+                if (editor.EditedMember == null) continue;
+                if (editor.EditedType == null) continue;
+                if (!IsAutoCreateMember(editor.EditedMember)) continue;
 
-					from p in propArr
-					where p.CanRead && p.GetIndexParameters().Length == 0 && this.IsAutoCreateMember(p)
-					orderby GetTypeHierarchyLevel(p.DeclaringType) ascending
-					select p
+                var reflectedType = ReflectTypeForMember(editor.EditedMember, values);
+                if (reflectedType != editor.EditedType) {
+                    if (invalidEditors == null) invalidEditors = new List<PropertyEditor>();
+                    invalidEditors.Add(editor);
+                }
+            }
 
-					).Concat((IEnumerable<MemberInfo>)
+            if (invalidEditors != null)
+                ReInitContent(invalidEditors);
+        }
 
-					from f in fieldArr
-					where this.IsAutoCreateMember(f)
-					orderby GetTypeHierarchyLevel(f.DeclaringType) ascending
-					select f
+        /// <summary>
+        ///     Determines the Type to use as a basis for generating a PropertyEditor for the specified member
+        ///     by evaluating the members current value and static Type.
+        /// </summary>
+        /// <param name="member"></param>
+        /// <param name="values"></param>
+        /// <returns></returns>
+        protected Type ReflectTypeForMember(MemberInfo member, IEnumerable<object> values) {
+            if (member is FieldInfo) {
+                var field = member as FieldInfo;
+                if (values != null)
+                    return ReflectDynamicType(field.FieldType, values.Where(v => v != null).Select(v => field.GetValue(v)));
+                return field.FieldType;
+            }
+            if (member is PropertyInfo) {
+                var property = member as PropertyInfo;
+                if (values != null) {
+                    var propertyValues = new List<object>();
+                    foreach (var obj in values) {
+                        if (obj == null) continue;
+                        try {
+                            var value = property.GetValue(obj, null);
+                            propertyValues.Add(value);
+                        } catch (TargetInvocationException) { }
+                    }
+                    return ReflectDynamicType(property.PropertyType, propertyValues);
+                }
+                return property.PropertyType;
+            }
+            throw new ArgumentException("Only PropertyInfo and FieldInfo members are supported");
+        }
 
-					);
-			}
-		}
-		protected IEnumerable<FieldInfo> QueryEditedFields()
-		{
-			FieldInfo[] fieldArr = this.EditedType.GetFields(
-				BindingFlags.Instance | 
-				BindingFlags.Public | 
-				BindingFlags.NonPublic);
-			return
-				from f in fieldArr
-				where this.IsAutoCreateMember(f)
-				orderby GetTypeHierarchyLevel(f.DeclaringType) ascending, f.Name
-				select f;
-		}
+        protected IEnumerable<MemberInfo> QueryEditedMembers() {
+            var propArr = EditedType.GetProperties(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic);
+            var fieldArr = EditedType.GetFields(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic);
 
-		protected override void OnGetValue()
-		{
-			base.OnGetValue();
-			IEnumerable<object> valueQuery = this.GetValue();
-			object[] values = (valueQuery != null ? valueQuery.ToArray() : null);
+            if (ParentGrid.SortEditorsByName)
+                return (
+                    from p in propArr
+                    where p.CanRead && p.GetIndexParameters().Length == 0 && IsAutoCreateMember(p)
+                    orderby GetTypeHierarchyLevel(p.DeclaringType), p.Name
+                    select p
+                ).Concat((IEnumerable<MemberInfo>)
+                    from f in fieldArr
+                    where IsAutoCreateMember(f)
+                    orderby GetTypeHierarchyLevel(f.DeclaringType), f.Name
+                    select f
+                );
+            return (
+                from p in propArr
+                where p.CanRead && p.GetIndexParameters().Length == 0 && IsAutoCreateMember(p)
+                orderby GetTypeHierarchyLevel(p.DeclaringType)
+                select p
+            ).Concat((IEnumerable<MemberInfo>)
+                from f in fieldArr
+                where IsAutoCreateMember(f)
+                orderby GetTypeHierarchyLevel(f.DeclaringType)
+                select f
+            );
+        }
 
-			this.VerifyReflectedTypeEditors(values);
-			this.BeginUpdate();
-			if (values == null)
-			{
-				this.HeaderValueText = null;
-				return;
-			}
-			this.OnUpdateFromObjects(values);
-			this.EndUpdate();
+        protected IEnumerable<FieldInfo> QueryEditedFields() {
+            var fieldArr = EditedType.GetFields(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic);
+            return
+                from f in fieldArr
+                where IsAutoCreateMember(f)
+                orderby GetTypeHierarchyLevel(f.DeclaringType), f.Name
+                select f;
+        }
 
-			foreach (PropertyEditor e in this.ChildEditors)
-				e.PerformGetValue();
-		}
-		protected override void OnSetValue()
-		{
-			if (this.ReadOnly) return;
-			if (!this.ChildEditors.Any()) return;
-			base.OnSetValue();
+        protected override void OnGetValue() {
+            base.OnGetValue();
+            var valueQuery = GetValue();
+            var values = valueQuery != null ? valueQuery.ToArray() : null;
 
-			foreach (PropertyEditor e in this.ChildEditors)
-				e.PerformSetValue();
-		}
-		protected virtual void OnUpdateFromObjects(object[] values)
-		{
-			string valString = null;
+            VerifyReflectedTypeEditors(values);
+            BeginUpdate();
+            if (values == null) {
+                HeaderValueText = null;
+                return;
+            }
+            OnUpdateFromObjects(values);
+            EndUpdate();
 
-			if (values == null || !values.Any() || values.All(o => o == null))
-			{
-				this.ClearContent();
+            foreach (var e in ChildEditors)
+                e.PerformGetValue();
+        }
 
-				this.Hints &= ~HintFlags.ExpandEnabled;
-				this.ButtonIcon = AdamsLair.WinForms.Properties.ResourcesCache.ImageAdd;
-				this.buttonIsCreate = true;
-				this.Expanded = false;
-					
-				valString = "null";
-			}
-			else
-			{
-				this.Hints |= HintFlags.ExpandEnabled;
-				if (!this.CanExpand) this.Expanded = false;
-				this.ButtonIcon = AdamsLair.WinForms.Properties.ResourcesCache.ImageDelete;
-				this.buttonIsCreate = false;
+        protected override void OnSetValue() {
+            if (ReadOnly) return;
+            if (!ChildEditors.Any()) return;
+            base.OnSetValue();
 
-				object firstValue = values.First();
-				int valueCount = values.Count();
+            foreach (var e in ChildEditors)
+                e.PerformSetValue();
+        }
 
-				if (valueCount == 1 && firstValue != null)
-				{
-					Type displayedType = firstValue.GetType();
-					MethodInfo[] methods = displayedType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
-					bool customToStringImplementation = methods.Any(m => m.DeclaringType != typeof(object) && m.Name == "ToString");
+        protected virtual void OnUpdateFromObjects(object[] values) {
+            string valString = null;
 
-					if (customToStringImplementation)
-						valString = firstValue.ToString();
-					else
-						valString = displayedType.GetTypeCSCodeName(true);
-				}
-				else
-				{
-					valString = string.Format(
-						Properties.Resources.PropertyGrid_N_Objects, 
-						valueCount);
-				}
-			}
+            if (values == null || !values.Any() || values.All(o => o == null)) {
+                ClearContent();
 
-			this.HeaderValueText = valString;
-		}
-		protected override void OnEditedTypeChanged()
-		{
-			base.OnEditedTypeChanged();
-			if (this.EditedType.IsValueType)
-				this.Hints &= ~HintFlags.HasButton;
-			else
-				this.Hints |= HintFlags.HasButton;
-			if (this.ContentInitialized) this.InitContent();
-		}
-		protected override void OnEditedMemberChanged()
-		{
-			base.OnEditedTypeChanged();
-			if (this.ContentInitialized) this.InitContent();
-		}
-		protected override void OnButtonPressed()
-		{
-			base.OnButtonPressed();
-			if (this.EditedType.IsValueType)
-			{
-				this.SetValue(this.ParentGrid.CreateObjectInstance(this.EditedType));
-			}
-			else
-			{
-				if (this.buttonIsCreate)
-				{
-					int objectsToCreate = this.GetValue().Count();
-					object[] createdObjects = new object[objectsToCreate];
-					for (int i = 0; i < createdObjects.Length; i++)
-					{
-						createdObjects[i] = this.ParentGrid.CreateObjectInstance(this.EditedType);
-					}
-					this.SetValues(createdObjects);
-					this.Expanded = true;
-				}
-				else
-				{
-					this.SetValue(null);
-				}
-			}
+                Hints &= ~HintFlags.ExpandEnabled;
+                ButtonIcon = ResourcesCache.ImageAdd;
+                buttonIsCreate = true;
+                Expanded = false;
 
-			this.PerformGetValue();
-		}
+                valString = "null";
+            } else {
+                Hints |= HintFlags.ExpandEnabled;
+                if (!CanExpand) Expanded = false;
+                ButtonIcon = ResourcesCache.ImageDelete;
+                buttonIsCreate = false;
 
-		protected virtual void BeforeAutoCreateEditors() {}
-		protected virtual bool IsAutoCreateMember(MemberInfo info)
-		{
-			return this.memberPredicate(info, this.ParentGrid.ShowNonPublic);
-		}
-		protected virtual PropertyEditor AutoCreateMemberEditor(MemberInfo info)
-		{
-			return null;
-		}
+                var firstValue = values.First();
+                var valueCount = values.Count();
 
-		protected internal override void OnKeyDown(KeyEventArgs e)
-		{
-			base.OnKeyDown(e);
-			if (!this.buttonIsCreate && e.KeyCode == Keys.Delete)
-			{
-				this.OnButtonPressed();
-				e.Handled = true;
-			}
-			else if (this.buttonIsCreate && e.KeyCode == Keys.Return)
-			{
-				this.OnButtonPressed();
-				e.Handled = true;
-			}
-		}
+                if (valueCount == 1 && firstValue != null) {
+                    var displayedType = firstValue.GetType();
+                    var methods = displayedType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
+                    var customToStringImplementation = methods.Any(m => m.DeclaringType != typeof(object) && m.Name == "ToString");
 
-		protected Func<IEnumerable<object>> CreatePropertyValueGetter(PropertyInfo property)
-		{
-			return () =>
-			{
-				List<object> propertyValues = new List<object>();
-				foreach (object obj in this.GetValue())
-				{
-					if (obj == null)
-					{
-						propertyValues.Add(null);
-					}
-					else
-					{
-						try
-						{
-							object value = property.GetValue(obj, null);
-							propertyValues.Add(value);
-						}
-						catch (TargetInvocationException)
-						{
-							propertyValues.Add(null);
-						}
-					}
-				}
-				return propertyValues;
-			};
-		}
-		protected Func<IEnumerable<object>> CreateFieldValueGetter(FieldInfo field)
-		{
-			return () => this.GetValue().Select(o => o != null ? field.GetValue(o) : null);
-		}
-		protected Action<IEnumerable<object>> CreatePropertyValueSetter(PropertyInfo property)
-		{
-			bool affectsOthers = this.ParentGrid.ShowNonPublic || this.memberAffectsOthers(property);
-			return delegate(IEnumerable<object> values)
-			{
-				object[] targetArray = this.GetValue().ToArray();
+                    if (customToStringImplementation)
+                        valString = firstValue.ToString();
+                    else
+                        valString = displayedType.GetTypeCSCodeName(true);
+                } else {
+                    valString = string.Format(
+                        Resources.PropertyGrid_N_Objects,
+                        valueCount);
+                }
+            }
 
-				// Set value
-				this.memberPropertySetter(property, targetArray, values);
+            HeaderValueText = valString;
+        }
 
-				// Fixup struct values by assigning the modified struct copy to its original member
-				if (this.EditedType.IsValueType || this.ForceWriteBack) this.SetValues((IEnumerable<object>)targetArray);
+        protected override void OnEditedTypeChanged() {
+            base.OnEditedTypeChanged();
+            if (EditedType.IsValueType)
+                Hints &= ~HintFlags.HasButton;
+            else
+                Hints |= HintFlags.HasButton;
+            if (ContentInitialized) InitContent();
+        }
 
-				this.OnPropertySet(property, targetArray);
-				if (affectsOthers)
-					this.PerformGetValue();
-				else
-					this.OnUpdateFromObjects(this.GetValue().ToArray());
-			};
-		}
-		protected Action<IEnumerable<object>> CreateFieldValueSetter(FieldInfo field)
-		{
-			bool affectsOthers = this.ParentGrid.ShowNonPublic || this.memberAffectsOthers(field);
-			return delegate(IEnumerable<object> values)
-			{
-				object[] targetArray = this.GetValue().ToArray();
+        protected override void OnEditedMemberChanged() {
+            base.OnEditedTypeChanged();
+            if (ContentInitialized) InitContent();
+        }
 
-				// Set value
-				this.memberFieldSetter(field, targetArray, values);
+        protected override void OnButtonPressed() {
+            base.OnButtonPressed();
+            if (EditedType.IsValueType) {
+                SetValue(ParentGrid.CreateObjectInstance(EditedType));
+            } else {
+                if (buttonIsCreate) {
+                    var objectsToCreate = GetValue().Count();
+                    var createdObjects = new object[objectsToCreate];
+                    for (var i = 0; i < createdObjects.Length; i++)
+                        createdObjects[i] = ParentGrid.CreateObjectInstance(EditedType);
+                    SetValues(createdObjects);
+                    Expanded = true;
+                } else {
+                    SetValue(null);
+                }
+            }
 
-				// Fixup struct values by assigning the modified struct copy to its original member
-				if (this.EditedType.IsValueType || this.ForceWriteBack) this.SetValues((IEnumerable<object>)targetArray);
+            PerformGetValue();
+        }
 
-				this.OnFieldSet(field, targetArray);
-				if (affectsOthers)
-					this.PerformGetValue();
-				else
-					this.OnUpdateFromObjects(this.GetValue().ToArray());
-			};
-		}
+        protected virtual void BeforeAutoCreateEditors() { }
 
-		protected virtual void OnPropertySet(PropertyInfo property, IEnumerable<object> targets) {}
-		protected virtual void OnFieldSet(FieldInfo property, IEnumerable<object> targets) {}
+        protected virtual bool IsAutoCreateMember(MemberInfo info) {
+            return memberPredicate(info, ParentGrid.ShowNonPublic);
+        }
 
-		protected static bool DefaultMemberPredicate(MemberInfo info, bool showNonPublic)
-		{
-			if (showNonPublic)
-			{
-				return true;
-			}
-			else if (info is PropertyInfo)
-			{
-				PropertyInfo property = info as PropertyInfo;
-				MethodInfo getter = property.GetGetMethod(true);
-				return getter != null && getter.IsPublic;
-			}
-			else if (info is FieldInfo)
-			{
-				FieldInfo field = info as FieldInfo;
-				return field.IsPublic;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		protected static bool DefaultMemberAffectsOthers(MemberInfo info)
-		{
-			return false;
-		}
-		protected static void DefaultPropertySetter(PropertyInfo property, IEnumerable<object> targetObjects, IEnumerable<object> values)
-		{
-			IEnumerator<object> valuesEnum = values.GetEnumerator();
-			object curValue = null;
+        protected virtual PropertyEditor AutoCreateMemberEditor(MemberInfo info) {
+            return null;
+        }
 
-			if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
-			foreach (object target in targetObjects)
-			{
-				if (target != null)
-				{
-					try
-					{
-						property.SetValue(target, curValue, null);
-					}
-					catch (TargetInvocationException) { }
-				}
-				if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
-			}
-		}
-		protected static void DefaultFieldSetter(FieldInfo field, IEnumerable<object> targetObjects, IEnumerable<object> values)
-		{
-			IEnumerator<object> valuesEnum = values.GetEnumerator();
-			object curValue = null;
+        protected internal override void OnKeyDown(KeyEventArgs e) {
+            base.OnKeyDown(e);
+            if (!buttonIsCreate && e.KeyCode == Keys.Delete) {
+                OnButtonPressed();
+                e.Handled = true;
+            } else if (buttonIsCreate && e.KeyCode == Keys.Return) {
+                OnButtonPressed();
+                e.Handled = true;
+            }
+        }
 
-			if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
-			foreach (object target in targetObjects)
-			{
-				if (target != null) field.SetValue(target, curValue);
-				if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
-			}
-		}
+        protected Func<IEnumerable<object>> CreatePropertyValueGetter(PropertyInfo property) {
+            return () => {
+                var propertyValues = new List<object>();
+                foreach (var obj in GetValue())
+                    if (obj == null)
+                        propertyValues.Add(null);
+                    else
+                        try {
+                            var value = property.GetValue(obj, null);
+                            propertyValues.Add(value);
+                        } catch (TargetInvocationException) {
+                            propertyValues.Add(null);
+                        }
+                return propertyValues;
+            };
+        }
 
-		private static int GetTypeHierarchyLevel(Type t)
-		{
-			int level = 0;
-			while (t.BaseType != null) { t = t.BaseType; level++; }
-			return level;
-		}
-	}
+        protected Func<IEnumerable<object>> CreateFieldValueGetter(FieldInfo field) {
+            return () => GetValue().Select(o => o != null ? field.GetValue(o) : null);
+        }
+
+        protected Action<IEnumerable<object>> CreatePropertyValueSetter(PropertyInfo property) {
+            var affectsOthers = ParentGrid.ShowNonPublic || memberAffectsOthers(property);
+            return delegate(IEnumerable<object> values) {
+                var targetArray = GetValue().ToArray();
+
+                // Set value
+                memberPropertySetter(property, targetArray, values);
+
+                // Fixup struct values by assigning the modified struct copy to its original member
+                if (EditedType.IsValueType || ForceWriteBack) SetValues(targetArray);
+
+                OnPropertySet(property, targetArray);
+                if (affectsOthers)
+                    PerformGetValue();
+                else
+                    OnUpdateFromObjects(GetValue().ToArray());
+            };
+        }
+
+        protected Action<IEnumerable<object>> CreateFieldValueSetter(FieldInfo field) {
+            var affectsOthers = ParentGrid.ShowNonPublic || memberAffectsOthers(field);
+            return delegate(IEnumerable<object> values) {
+                var targetArray = GetValue().ToArray();
+
+                // Set value
+                memberFieldSetter(field, targetArray, values);
+
+                // Fixup struct values by assigning the modified struct copy to its original member
+                if (EditedType.IsValueType || ForceWriteBack) SetValues(targetArray);
+
+                OnFieldSet(field, targetArray);
+                if (affectsOthers)
+                    PerformGetValue();
+                else
+                    OnUpdateFromObjects(GetValue().ToArray());
+            };
+        }
+
+        protected virtual void OnPropertySet(PropertyInfo property, IEnumerable<object> targets) { }
+        protected virtual void OnFieldSet(FieldInfo property, IEnumerable<object> targets) { }
+
+        protected static bool DefaultMemberPredicate(MemberInfo info, bool showNonPublic) {
+            if (showNonPublic)
+                return true;
+            if (info is PropertyInfo) {
+                var property = info as PropertyInfo;
+                var getter = property.GetGetMethod(true);
+                return getter != null && getter.IsPublic;
+            }
+            if (info is FieldInfo) {
+                var field = info as FieldInfo;
+                return field.IsPublic;
+            }
+            return false;
+        }
+
+        protected static bool DefaultMemberAffectsOthers(MemberInfo info) {
+            return false;
+        }
+
+        protected static void DefaultPropertySetter(PropertyInfo property, IEnumerable<object> targetObjects, IEnumerable<object> values) {
+            var valuesEnum = values.GetEnumerator();
+            object curValue = null;
+
+            if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
+            foreach (var target in targetObjects) {
+                if (target != null)
+                    try {
+                        property.SetValue(target, curValue, null);
+                    } catch (TargetInvocationException) { }
+                if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
+            }
+        }
+
+        protected static void DefaultFieldSetter(FieldInfo field, IEnumerable<object> targetObjects, IEnumerable<object> values) {
+            var valuesEnum = values.GetEnumerator();
+            object curValue = null;
+
+            if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
+            foreach (var target in targetObjects) {
+                if (target != null) field.SetValue(target, curValue);
+                if (valuesEnum.MoveNext()) curValue = valuesEnum.Current;
+            }
+        }
+
+        private static int GetTypeHierarchyLevel(Type t) {
+            var level = 0;
+            while (t.BaseType != null) {
+                t = t.BaseType;
+                level++;
+            }
+            return level;
+        }
+    }
 }
