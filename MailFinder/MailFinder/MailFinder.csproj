@@ -11,6 +11,8 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,6 +37,21 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Gma.System.MouseKeyHook, Version=5.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MouseKeyHook.5.4.0\lib\net40\Gma.System.MouseKeyHook.dll</HintPath>
+    </Reference>
+    <Reference Include="MsgReader, Version=2.0.13.0, Culture=neutral, PublicKeyToken=47f99f3a9a2648df, processorArchitecture=MSIL">
+      <HintPath>..\packages\MSGReader.2.0.13\lib\MsgReader.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NHotkey, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NHotkey.1.2.1\lib\net20\NHotkey.dll</HintPath>
+    </Reference>
+    <Reference Include="NHotkey.WindowsForms, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NHotkey.WindowsForms.1.2.1\lib\net20\NHotkey.WindowsForms.dll</HintPath>
+    </Reference>
     <Reference Include="nucs.Automation, Version=1.0.1.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\nucs.Automation.1.0.1.1\lib\net45\nucs.Automation.dll</HintPath>
     </Reference>
@@ -52,27 +69,43 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bool.cs" />
+    <Compile Include="Helpers\Bool.cs" />
     <Compile Include="ConsoleHelper.cs" />
-    <Compile Include="DynamicEqualityComparer.cs" />
-    <Compile Include="ExplorerMonitor.cs" />
-    <Compile Include="ForegroundWindowMonitor.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="Monitoring\DynamicEqualityComparer.cs" />
+    <Compile Include="Monitoring\ExplorerMonitor.cs" />
+    <Compile Include="Extensions\CollectionExtensions.cs" />
+    <Compile Include="Extensions\ControlExtensions.cs" />
+    <Compile Include="Extensions\ConvertHelper.cs" />
+    <Compile Include="Extensions\ExceptBy.cs" />
+    <Compile Include="Extensions\IntersectBy.cs" />
+    <Compile Include="Extensions\MoreEnumerable.cs" />
+    <Compile Include="Extensions\ObjectExtensions.cs" />
+    <Compile Include="Extensions\PathExtensions.cs" />
+    <Compile Include="Extensions\XEqualityComparer.cs" />
+    <Compile Include="Monitoring\ForegroundWindowMonitor.cs" />
+    <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="HttpUtilities.cs" />
-    <Compile Include="IMonitor.cs" />
-    <Compile Include="MonitorBase.cs" />
+    <Compile Include="Helpers\FileDialogs.cs" />
+    <Compile Include="Helpers\Paths.cs" />
+    <Compile Include="Helpers\SafeDictionary.cs" />
+    <Compile Include="Helpers\HttpUtilities.cs" />
+    <Compile Include="Monitoring\IMonitor.cs" />
+    <Compile Include="Monitoring\MonitorBase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SingleMonitorBase.cs" />
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="Settings\ISaveable.cs" />
+    <Compile Include="Settings\JsonConfiguration.cs" />
+    <Compile Include="Settings\SettingsBag.cs" />
+    <Compile Include="Monitoring\SingleMonitorBase.cs" />
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -110,10 +143,13 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Image1.bmp" />
-  </ItemGroup>
-  <ItemGroup>
+    <Content Include="Resources\clip.png" />
+    <Content Include="Resources\clipoff.png" />
     <Content Include="Resources\cross.png" />
+    <Content Include="Resources\folder.png" />
+    <Content Include="Resources\folderoff.png" />
+    <Content Include="Resources\folderblue.png" />
+    <Content Include="Resources\attach.png" />
     <Content Include="Resources\ltr.png" />
     <Content Include="Resources\rtl.png" />
   </ItemGroup>

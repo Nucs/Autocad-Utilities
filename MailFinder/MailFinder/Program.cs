@@ -1,38 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Gma.System.MouseKeyHook;
+using nucs.Automation;
 using nucs.Automation.Mirror;
 using nucs.Filesystem.Monitoring.Windows;
 using nucs.Monitoring.Inline;
 using nucs.SConsole;
+using nucs.Winforms.Maths;
 using SHDocVw;
 
 namespace MailFinder {
     static class Program {
-        public static DirectoryInfo CurrentWindow { get; private set; }
+        public static IKeyboardMouseEvents Interface;
+        public static DirectoryInfo CurrentFolder { get; private set; }
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
+        [STAThread]
         static void Main() {
-            var p = new WindowsExplorerListener();
-            p.ChangedDirectory += dir => {
-                Console.WriteLine((CurrentWindow=dir).FullName);
-            };
-
-            p.Start();
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            WindowsExplorerListener p = null;
+            try {
+                Interface = Hook.GlobalEvents();
+                p = new WindowsExplorerListener();
+                p.ChangedDirectory += dir => { Console.WriteLine((CurrentFolder = dir).FullName); };
+                p.Start();
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+            } finally {
+                (Interface as IKeyboardMouseEvents)?.Dispose();
+                p?.Dispose();
+            }
         }
     }
 
     public class WindowsExplorerListener : IDisposable {
         public delegate void ChangedDirectoryHandler(DirectoryInfo dir);
+
         public event ChangedDirectoryHandler ChangedDirectory;
 
         public DirectoryInfo Current { get; private set; }
