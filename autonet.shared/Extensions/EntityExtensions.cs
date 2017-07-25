@@ -1,7 +1,9 @@
 ﻿using System;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
 
 namespace autonet.Extensions {
     public static class EntityExtensions {
@@ -9,6 +11,19 @@ namespace autonet.Extensions {
             for (int i = 0; i < p.NumberOfVertices; i++) {
                 p.SetEndWidthAt(i, width);
                 p.SetStartWidthAt(i, width);
+            }
+        }
+
+        public static Polyline ConvertToPolyline(this Polyline2d pl2d, QuickTransaction tr) {
+            var mSpace = (BlockTableRecord) SymbolUtilityServices.GetBlockModelSpaceId(tr.Db).GetObject(OpenMode.ForWrite);
+            if (pl2d.PolyType == Poly2dType.CubicSplinePoly || pl2d.PolyType == Poly2dType.QuadSplinePoly)
+                return null;
+            using (var pline = new Polyline()) {
+                pline.ConvertFrom(pl2d, false);
+                mSpace.AppendEntity(pline);
+                tr.AddNewlyCreatedDBObject(pline, true);
+                pl2d.Erase();
+                return pline;
             }
         }
 
@@ -32,6 +47,8 @@ namespace autonet.Extensions {
                     return CircleToPoly(tr, c);
                 case Spline sp:
                     return SplineToPoly(tr, sp);
+                case Polyline2d p2d:
+                    return ConvertToPolyline(p2d, tr);
                 default:
                     tr.WriteLine("Unsupported to polyline conversion: " + id.GetType().FullName);
                     return null;
@@ -87,7 +104,7 @@ namespace autonet.Extensions {
         public static Polyline SplineToPoly(this QuickTransaction tr, Spline c) {
             var p = c.ToPolyline();
             tr.BlockTableRecordCurrentSpace.AppendEntity(p);
-            tr.AddNewlyCreatedDBObject(p,true);
+            tr.AddNewlyCreatedDBObject(p, true);
             c.Erase();
             return (Polyline) p;
         }
@@ -170,8 +187,8 @@ namespace autonet.Extensions {
             if (Clockwise(seg1.StartPoint, seg1.EndPoint, seg2.EndPoint))
                 bulge = -bulge;
             pline.AddVertexAt(index, pt1, bulge, 0.0, 0.0);
-            pline.SetEndWidthAt(index, pline.GetStartWidthAt(index+1));
-            pline.SetStartWidthAt(index, pline.GetEndWidthAt(index-1));
+            pline.SetEndWidthAt(index, pline.GetStartWidthAt(index + 1));
+            pline.SetStartWidthAt(index, pline.GetEndWidthAt(index - 1));
             pline.SetPointAt(index + 1, pt2);
             return 1;
         }

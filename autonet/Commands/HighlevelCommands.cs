@@ -20,11 +20,6 @@ using System.Collections.Generic;
 
 namespace autonet.Forms {
     public static class HighlevelCommands {
-
-
-
-
-
         /// <summary>
         ///     Custom method to make my work faster..
         /// </summary>
@@ -35,12 +30,12 @@ namespace autonet.Forms {
             var set = Quick.GetImpliedOrSelect();
             if (set == null || set.Count == 0)
                 return;
-            
+
             using (var tr = new QuickTransaction()) {
                 //PromptSelectionOptions opts = new PromptSelectionOptions {MessageForAdding = "\nSelect cables to apply magic dust on: ", MessageForRemoval = "\n...Remove cables: "};
                 //var set = tr.GetImpliedOrSelect(opts);
                 List<ObjectId> polylines = new List<ObjectId>();
-                List<ObjectId> linearc= new List<ObjectId>();
+                List<ObjectId> linearc = new List<ObjectId>();
                 ObjectId[] objs = set.Cast<SelectedObject>().Select(so => so.ObjectId).ToArray();
                 for (var i = 0; i < objs.Length; i++) {
                     var oid = objs[i];
@@ -48,7 +43,7 @@ namespace autonet.Forms {
 
                     if (qc.ConvertAllToPolyline && o is Polyline == false) {
                         var poly = tr.ConvertToPolyline(o);
-                        if (poly!=null) //if was successful
+                        if (poly != null) //if was successful
                             objs[i] = (o = poly).ObjectId;
                     }
 
@@ -78,20 +73,18 @@ namespace autonet.Forms {
                         o.Color = Color.FromColor(qc.Color);
                     }
                     if (qc.EnabledWidth && o is Polyline p) {
-                        p.SetGlobalWidth(qc.Width); 
+                        p.SetGlobalWidth(qc.Width);
                     }
 
                     if (qc.EnabledThickness) {
-                        o.GetType().GetProperty("Thickness")?.SetValue(o, qc.Thickness,null);
+                        o.GetType().GetProperty("Thickness")?.SetValue(o, qc.Thickness, null);
                     }
 
                     _postcolor:
                     ;
                 }
 
-                if (qc.EnabledWidth) {
-                    
-                }
+                if (qc.EnabledWidth) { }
 /*
                 if (tr.LayerTable.Has("EL-LT-CABL-160")) {
                     var lyr = tr.LayerTable["EL-LT-CABL-160"];
@@ -126,7 +119,6 @@ namespace autonet.Forms {
         public static void DoitCommand() {
             var imp = Quick.GetImpliedOrSelect();
             using (var tr = new QuickTransaction()) {
-
                 tr.Commit();
             }
         }
@@ -189,7 +181,7 @@ namespace autonet.Forms {
         [CommandMethod("Quicky", "uh", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void UnHideCommand() {
             var cmd = "uh";
-            
+
             var all = Quick.SelectAll();
             if (all == null) {
                 Quick.WriteLine($"[{cmd}] Failed selecting All.");
@@ -197,7 +189,7 @@ namespace autonet.Forms {
             }
 
             using (var tr = new QuickTransaction()) {
-                var rest = all.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr,true));
+                var rest = all.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr, true));
                 foreach (var o in rest) {
                     o.Visible = true;
                 }
@@ -206,6 +198,7 @@ namespace autonet.Forms {
                 Quick.ClearSelected();
             }
         }
+
         [CommandMethod("Quicky", "h", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void HideCommand() {
             var cmd = "h";
@@ -216,7 +209,7 @@ namespace autonet.Forms {
             }
 
             using (var tr = new QuickTransaction()) {
-                var rest = imp.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr,true));
+                var rest = imp.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr, true));
                 foreach (var o in rest) {
                     o.Visible = false;
                 }
@@ -234,14 +227,14 @@ namespace autonet.Forms {
                 return;
             }
             using (var tr = new QuickTransaction()) {
-                var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: "){AllowNegative = false, DefaultValue = Quick.Bag.Get("[w]width", 0.4d)});
+                var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: ") {AllowNegative = false, DefaultValue = Quick.Bag.Get("[w]width", 0.4d)});
                 if (dbl.Status != PromptStatus.OK) {
                     Quick.WriteLine($"[{Quick.CurrentCommand}] Failed selecting double.");
                     return;
                 }
                 double val = (double) (Quick.Bag["[w]width"] = dbl.Value);
                 //tr.Command("_.pedit", "_m", set, "_n", "_w", dbl.Value.ToString(), "");
-                foreach (var e in set.GetObjectIds().Select(o=>tr.GetObject(o,true))) {
+                foreach (var e in set.GetObjectIds().Select(o => tr.GetObject(o, true))) {
                     switch (e) {
                         case Autodesk.AutoCAD.DatabaseServices.Polyline p:
                             p.SetGlobalWidth(val);
@@ -260,7 +253,7 @@ namespace autonet.Forms {
                 tr.Commit();
             }
         }
-        
+
         [CommandMethod("Quicky", "f", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void FilletCommand() {
             var cmd = "f";
@@ -270,7 +263,7 @@ namespace autonet.Forms {
                 return;
             }
             using (var tr = new QuickTransaction()) {
-                var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: "){AllowNegative = false, DefaultValue = Quick.Bag.Get($"[{cmd}]width", 0.4d)});
+                var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: ") {AllowNegative = false, DefaultValue = Quick.Bag.Get($"[{cmd}]width", 0.4d)});
                 if (dbl.Status != PromptStatus.OK) {
                     Quick.WriteLine($"[{cmd}] Failed selecting double.");
                     return;
@@ -278,7 +271,7 @@ namespace autonet.Forms {
 
                 double val = (double) (Quick.Bag[$"[{cmd}]width"] = dbl.Value);
                 //tr.Command("_.pedit", "_m", set, "_n", "_w", dbl.Value.ToString(), "");
-                foreach (var e in set.GetObjectIds().Select(o=>tr.GetObject(o,true))) {
+                foreach (var e in set.GetObjectIds().Select(o => tr.GetObject(o, true))) {
                     switch (e) {
                         case Autodesk.AutoCAD.DatabaseServices.Polyline p:
                             p.FilletAll(val);
