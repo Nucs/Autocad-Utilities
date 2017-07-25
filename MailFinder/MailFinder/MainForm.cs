@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -15,6 +17,8 @@ using System.Windows.Input;
 using autonet.Common.Settings;
 using autonet.Extensions;
 using autonet.Settings;
+using BrightIdeasSoftware;
+using MailFinder.Properties;
 using MsgReader.Outlook;
 using nucs.Filesystem;
 using nucs.Winforms.Maths;
@@ -28,8 +32,11 @@ namespace MailFinder {
 
         public MainForm() {
             InitializeComponent();
+            this.TopMost = true;
             HotkeyManager.Current.AddOrReplace("Toggle", Keys.F10, true, HotkeyOnKeyPressed);
             Program.Interface.MouseMove += new MouseEventHandler(MouseMovementDetection);
+            this.lstResults.PrimarySortColumn = new OLVColumn("Path", "Path");
+            lstResults.RowHeight = -1;
         }
 
         public SettingsBag Bag {
@@ -81,6 +88,74 @@ namespace MailFinder {
             this.btnAttachments.BackgroundImage = Bag.Get("deepattachments", false) == false
                 ? global::MailFinder.Properties.Resources.clipoff
                 : global::MailFinder.Properties.Resources.clip;
+
+            //test:
+            var smaller = ResizeImage(Resources.clip, 10, 10);
+            var smaller2 = ResizeImage(Resources.folder, 10, 10);
+            var a = new SearchResult() {Path = "C:\\lol\\wtf", Term = "sometext more", Image = smaller};
+            var b = new SearchResult() {Path = "C:\\lol\\wtf2", Term = "sometext more more", Image = smaller2};
+            this.lstResults.SetObjects(new[] {a, b, b, a, a, a, a, a});
+        }
+
+        /// <summary>
+        /// Resize the image to the specified width and height.
+        /// </summary>
+        /// <param name="image">The image to resize.</param>
+        /// <param name="width">The width to resize to.</param>
+        /// <param name="height">The height to resize to.</param>
+        /// <returns>The resized image.</returns>
+        public static Bitmap ResizeImage(Image image, int width, int height) {
+            var destRect = new Rectangle(0, 0, width, height);
+            var destImage = new Bitmap(width, height);
+
+            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
+            using (var graphics = Graphics.FromImage(destImage)) {
+                graphics.CompositingMode = CompositingMode.SourceCopy;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                using (var wrapMode = new ImageAttributes()) {
+                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
+                }
+            }
+
+            return destImage;
+        }
+
+        // Passing null for either maxWidth or maxHeight maintains aspect ratio while
+        //        the other non-null parameter is guaranteed to be constrained to
+        //        its maximum value.
+        //
+        //  Example: maxHeight = 50, maxWidth = null
+        //    Constrain the height to a maximum value of 50, respecting the aspect
+        //    ratio, to any width.
+        //
+        //  Example: maxHeight = 100, maxWidth = 90
+        //    Constrain the height to a maximum of 100 and width to a maximum of 90
+        //    whichever comes first.
+        //
+        private static Size ScaleSize(Size from, int? maxWidth, int? maxHeight) {
+            if (!maxWidth.HasValue && !maxHeight.HasValue) throw new ArgumentException("At least one scale factor (toWidth or toHeight) must not be null.");
+            if (from.Height == 0 || from.Width == 0) throw new ArgumentException("Cannot scale size from zero.");
+
+            double? widthScale = null;
+            double? heightScale = null;
+
+            if (maxWidth.HasValue) {
+                widthScale = maxWidth.Value / (double) from.Width;
+            }
+            if (maxHeight.HasValue) {
+                heightScale = maxHeight.Value / (double) from.Height;
+            }
+
+            double scale = Math.Min((double) (widthScale ?? heightScale),
+                (double) (heightScale ?? widthScale));
+
+            return new Size((int) Math.Floor(from.Width * scale), (int) Math.Ceiling(from.Height * scale));
         }
 
         #region Searching
@@ -92,10 +167,17 @@ namespace MailFinder {
 
             Process(term);
         }
-        private CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
+
+        private readonly CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
+
         private void Process(string term) {
             var current = Program.CurrentFolder;
+            if (current == null)
+                return;
+
+            lblPath.Invoke(new MethodInvoker(() => lblPath.Text = current.FullName));
             var recusive = Bag.Data["deepfolder"] as bool? ?? false;
+            var attachments = Bag.Data["deepattachments"] as bool? ?? false;
             var files = recusive ? FileSearch.EnumerateFilesDeep(current, "*.msg") : FileSearch.GetFiles(current, "*.msg");
             foreach (var file in files) {
                 using (var msg = new MsgReader.Outlook.Storage.Message(file.FullName)) {
@@ -106,7 +188,7 @@ namespace MailFinder {
                     var recipientsCc = msg.GetEmailRecipients(Storage.Recipient.RecipientType.Cc, false, false);
                     var subject = msg.Subject;
                     var body = msg.BodyText;
-                    var messages = _deep_attachments(msg, new[] {"msg"});
+                    var messages = attachments ? _deep_attachments(msg, new[] {"msg"}) : extractMessages(msg, new[] { "msg" });
                     // etc...
 
                     sb.AppendLine($"{(sentOn ?? DateTime.MinValue).ToString("g", ILCulture)}");
@@ -114,14 +196,13 @@ namespace MailFinder {
                     sb.AppendLine($"{recipientsTo}");
                     sb.AppendLine($"{recipientsCc}");
                     sb.AppendLine($"{subject}");
-                    sb.AppendLine($"{string.Join("",msg.GetAttachmentNames().Select(o=>o+";"))}");
+                    sb.AppendLine($"{string.Join("", msg.GetAttachmentNames().Select(o => o + ";"))}");
                     sb.AppendLine($"{body}");
 
                     sb.ToString().Contains("some text");
 
                     var regex = new Regex(".*my (.*) is.*");
-                    if (regex.IsMatch("This is an example string and my data is here"))
-                    {
+                    if (regex.IsMatch("This is an example string and my data is here")) {
                         var myCapturedText = regex.Match("This is an example string and my data is here").Groups[1].Value;
                         Console.WriteLine("This is my captured text: {0}", myCapturedText);
                     }
@@ -139,24 +220,40 @@ namespace MailFinder {
             if (supported == null) throw new ArgumentNullException(nameof(supported));
             if (supported.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(supported));
 
-            if (l==null)
+            if (l == null)
                 l = new List<Storage.Message>();
 
             var attch = new List<object>(msg.Attachments);
             var innermessages = attch.TakeoutWhereType<object, Storage.Message>().Concat(
                     attch.Cast<Storage.Attachment>()
-                    .Where(att => supported.Any(s=>Path.GetExtension(att.FileName).EndsWith(s, true, CultureInfo.InvariantCulture)))
-                    .Select(att => {
-                        using (var ms = new MemoryStream(att.Data, false))
-                            return new Storage.Message(ms);
-                    }))
-            .ToList();
+                        .Where(att => supported.Any(s => Path.GetExtension(att.FileName).EndsWith(s, true, CultureInfo.InvariantCulture)))
+                        .Select(att => {
+                            using (var ms = new MemoryStream(att.Data, false))
+                                return new Storage.Message(ms);
+                        }))
+                .ToList();
             l.AddRange(innermessages);
 
             foreach (var im in innermessages) {
                 _deep_attachments(im, supported, l);
             }
 
+            return l;
+        }
+
+        private List<Storage.Message> extractMessages(Storage.Message msg, string[] supported) {
+            var l = new List<Storage.Message>();
+
+            var attch = new List<object>(msg.Attachments);
+            var innermessages = attch.TakeoutWhereType<object, Storage.Message>().Concat(
+                    attch.Cast<Storage.Attachment>()
+                        .Where(att => supported.Any(s => Path.GetExtension(att.FileName).EndsWith(s, true, CultureInfo.InvariantCulture)))
+                        .Select(att => {
+                            using (var ms = new MemoryStream(att.Data, false))
+                                return new Storage.Message(ms);
+                        }))
+                .ToList();
+            l.AddRange(innermessages);
             return l;
         }
 
@@ -239,7 +336,8 @@ namespace MailFinder {
             if (val == false) {
                 Bag.Set("deepfolder", true);
                 this.btnRecusive.BackgroundImage = global::MailFinder.Properties.Resources.folderblue;
-            } else {
+            }
+            else {
                 Bag.Set("deepfolder", false);
                 this.btnRecusive.BackgroundImage = global::MailFinder.Properties.Resources.folderoff;
             }
@@ -250,10 +348,17 @@ namespace MailFinder {
             if (val == false) {
                 Bag.Set("deepattachments", true);
                 this.btnAttachments.BackgroundImage = global::MailFinder.Properties.Resources.clip;
-            } else {
+            }
+            else {
                 Bag.Set("deepattachments", false);
                 this.btnAttachments.BackgroundImage = global::MailFinder.Properties.Resources.clipoff;
             }
+        }
+
+        private void MainForm_Paint(object sender, PaintEventArgs e) {
+            var r = this.DisplayRectangle;
+            r = new Rectangle(r.Location.X, r.Location.Y, r.Width-1, r.Height-1);
+            e.Graphics.DrawRectangle(new Pen(Color.Black, 1), r);
         }
     }
 }
