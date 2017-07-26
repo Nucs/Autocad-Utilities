@@ -18,12 +18,14 @@ using autonet.Common.Settings;
 using autonet.Extensions;
 using autonet.Settings;
 using BrightIdeasSoftware;
+using hOOt;
 using MailFinder.Properties;
 using MsgReader.Outlook;
 using nucs.Filesystem;
 using nucs.Winforms.Maths;
 using NHotkey;
 using NHotkey.WindowsForms;
+using RaptorDB;
 using Paths = Common.Paths;
 
 namespace MailFinder {
@@ -169,51 +171,74 @@ namespace MailFinder {
         }
 
         private readonly CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
-
+        public const string Version = "1.0.0.0";
         private void Process(string term) {
             var current = Program.CurrentFolder;
             if (current == null)
                 return;
+            var index = current.SubFolder("$index").EnsureCreated();
+            index.Attributes = FileAttributes.Hidden;
+            Hoot hoot = new Hoot(index.FullName, current.FullName, true);
+            
 
             lblPath.Invoke(new MethodInvoker(() => lblPath.Text = current.FullName));
             var recusive = Bag.Data["deepfolder"] as bool? ?? false;
             var attachments = Bag.Data["deepattachments"] as bool? ?? false;
             var files = recusive ? FileSearch.EnumerateFilesDeep(current, "*.msg") : FileSearch.GetFiles(current, "*.msg");
             foreach (var file in files) {
-                using (var msg = new MsgReader.Outlook.Storage.Message(file.FullName)) {
-                    var sb = new StringBuilder();
-                    var from = msg.Sender;
-                    var sentOn = msg.SentOn;
-                    var recipientsTo = msg.GetEmailRecipients(Storage.Recipient.RecipientType.To, false, false);
-                    var recipientsCc = msg.GetEmailRecipients(Storage.Recipient.RecipientType.Cc, false, false);
-                    var subject = msg.Subject;
-                    var body = msg.BodyText;
-                    var messages = attachments ? _deep_attachments(msg, new[] {"msg"}) : extractMessages(msg, new[] { "msg" });
-                    // etc...
+                var f = file.FullName;
+                if (hoot.IsIndexed(f)) continue;
+                using (var msg = new Storage.Message(f)) {
+                    var main = MessageToString(msg);
+                    var attchs = (attachments ? _deep_attachments(msg, new[] { "msg" }) : extractMessages(msg, new[] { "msg" })).Select(MessageToString).ToArray();
+                    var n = new MessageIndex(){Version = Version, Message = main, Attachments = attchs, FileName = f};
 
-                    sb.AppendLine($"{(sentOn ?? DateTime.MinValue).ToString("g", ILCulture)}");
-                    sb.AppendLine($"{from.DisplayName} {from.Email}");
-                    sb.AppendLine($"{recipientsTo}");
-                    sb.AppendLine($"{recipientsCc}");
-                    sb.AppendLine($"{subject}");
-                    sb.AppendLine($"{string.Join("", msg.GetAttachmentNames().Select(o => o + ";"))}");
-                    sb.AppendLine($"{body}");
-
-                    sb.ToString().Contains("some text");
-
-                    var regex = new Regex(".*my (.*) is.*");
-                    if (regex.IsMatch("This is an example string and my data is here")) {
-                        var myCapturedText = regex.Match("This is an example string and my data is here").Groups[1].Value;
-                        Console.WriteLine("This is my captured text: {0}", myCapturedText);
-                    }
-
-                    Debug.WriteLine(sb.ToString());
+                    hoot.Index(n, false);
+                    
                 }
             }
-
+            hoot.Save();
             //todo add hidden msgtext file 
         }
 
+        public class MessageIndex : Document {
+            public string Version { get; set; }
+            public string Message { get; set; }
+
+            public string[] Attachments { get; set; }
+        }
+
+        private string MessageToString(Storage.Message msg) {
+            var sb = new StringBuilder();
+            var from = msg.Sender;
+            var sentOn = msg.SentOn;
+            var recipientsTo = msg.GetEmailRecipients(Storage.Recipient.RecipientType.To, false, false);
+            var recipientsCc = msg.GetEmailRecipients(Storage.Recipient.RecipientType.Cc, false, false);
+            var subject = msg.Subject;
+            var body = msg.BodyText;
+            // etc...
+
+            sb.AppendLine($"{(sentOn ?? DateTime.MinValue).ToString("g", ILCulture)}");
+            sb.AppendLine($"{from.DisplayName} {from.Email}");
+            sb.AppendLine($"{recipientsTo}");
+            sb.AppendLine($"{recipientsCc}");
+            sb.AppendLine($"{subject}");
+            sb.AppendLine($"{string.Join("", msg.GetAttachmentNames().Select(o => o + ";"))}");
+            sb.AppendLine($"{body}");
+
+            return sb.ToString().Replace("\n\n", "\n").Replace("\n\n", "\n");
+
+            /*sb.ToString().Contains("some text");
+
+            var regex = new Regex(".*my (.*) is.*");
+            if (regex.IsMatch("This is an example string and my data is here"))
+            {
+                var myCapturedText = regex.Match("This is an example string and my data is here").Groups[1].Value;
+                Console.WriteLine("This is my captured text: {0}", myCapturedText);
+            }
+
+            Debug.WriteLine(sb.ToString());*/
+        }
 
         private List<Storage.Message> _deep_attachments(Storage.Message msg, string[] supported, List<Storage.Message> l = null) {
             if (msg == null) throw new ArgumentNullException(nameof(msg));

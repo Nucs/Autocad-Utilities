@@ -156,6 +156,10 @@
     <Content Include="Resources\rtl.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\hoot\Hoot\Hoot.csproj">
+      <Project>{e6c567b0-acad-42d4-9242-4e5e22d2af1d}</Project>
+      <Name>Hoot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ObjectListView\ObjectListView\ObjectListView2012.csproj">
       <Project>{18feda0c-d147-4286-b39a-01204808106a}</Project>
       <Name>ObjectListView2012</Name>
