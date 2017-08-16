@@ -1,31 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security;
+using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Input;
 using autonet.Common.Settings;
 using autonet.Extensions;
 using autonet.Settings;
 using BrightIdeasSoftware;
-using hOOt;
+using MailFinder.FileTypes;
 using MailFinder.Properties;
 using MsgReader.Outlook;
 using nucs.Filesystem;
-using nucs.Winforms.Maths;
 using NHotkey;
 using NHotkey.WindowsForms;
-using RaptorDB;
 using Paths = Common.Paths;
 
 namespace MailFinder {
@@ -36,7 +30,7 @@ namespace MailFinder {
             InitializeComponent();
             this.TopMost = true;
             HotkeyManager.Current.AddOrReplace("Toggle", Keys.F10, true, HotkeyOnKeyPressed);
-            Program.Interface.MouseMove += new MouseEventHandler(MouseMovementDetection);
+            Program.Interface.MouseMove += MouseMovementDetection;
             this.lstResults.PrimarySortColumn = new OLVColumn("Path", "Path");
             lstResults.RowHeight = -1;
         }
@@ -167,19 +161,21 @@ namespace MailFinder {
             if (string.IsNullOrEmpty(term))
                 return;
 
-            Process(term);
+            //todo handle new text search
+
+            //Process(term);
         }
 
         private readonly CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
+
         public const string Version = "1.0.0.0";
-        private void Process(string term) {
+/*        private void Process(string term) {
             var current = Program.CurrentFolder;
             if (current == null)
                 return;
             var index = current.SubFolder("$index").EnsureCreated();
+
             index.Attributes = FileAttributes.Hidden;
-            Hoot hoot = new Hoot(index.FullName, current.FullName, true);
-            
 
             lblPath.Invoke(new MethodInvoker(() => lblPath.Text = current.FullName));
             var recusive = Bag.Data["deepfolder"] as bool? ?? false;
@@ -187,100 +183,18 @@ namespace MailFinder {
             var files = recusive ? FileSearch.EnumerateFilesDeep(current, "*.msg") : FileSearch.GetFiles(current, "*.msg");
             foreach (var file in files) {
                 var f = file.FullName;
-                if (hoot.IsIndexed(f)) continue;
                 using (var msg = new Storage.Message(f)) {
                     var main = MessageToString(msg);
                     var attchs = (attachments ? _deep_attachments(msg, new[] { "msg" }) : extractMessages(msg, new[] { "msg" })).Select(MessageToString).ToArray();
-                    var n = new MessageIndex(){Version = Version, Message = main, Attachments = attchs, FileName = f};
-
-                    hoot.Index(n, false);
-                    
+                    var n = new SearchableFile() {Version = Version, Content = main, Attachments = attchs, Path = file.FullName};
+                    try {
+                        n.MD5 = file.CalculateMD5();
+                    } catch (SecurityException) {} catch (IOException) {} catch (UnauthorizedAccessException) {}
                 }
             }
             hoot.Save();
             //todo add hidden msgtext file 
-        }
-
-        public class MessageIndex : Document {
-            public string Version { get; set; }
-            public string Message { get; set; }
-
-            public string[] Attachments { get; set; }
-        }
-
-        private string MessageToString(Storage.Message msg) {
-            var sb = new StringBuilder();
-            var from = msg.Sender;
-            var sentOn = msg.SentOn;
-            var recipientsTo = msg.GetEmailRecipients(Storage.Recipient.RecipientType.To, false, false);
-            var recipientsCc = msg.GetEmailRecipients(Storage.Recipient.RecipientType.Cc, false, false);
-            var subject = msg.Subject;
-            var body = msg.BodyText;
-            // etc...
-
-            sb.AppendLine($"{(sentOn ?? DateTime.MinValue).ToString("g", ILCulture)}");
-            sb.AppendLine($"{from.DisplayName} {from.Email}");
-            sb.AppendLine($"{recipientsTo}");
-            sb.AppendLine($"{recipientsCc}");
-            sb.AppendLine($"{subject}");
-            sb.AppendLine($"{string.Join("", msg.GetAttachmentNames().Select(o => o + ";"))}");
-            sb.AppendLine($"{body}");
-
-            return sb.ToString().Replace("\n\n", "\n").Replace("\n\n", "\n");
-
-            /*sb.ToString().Contains("some text");
-
-            var regex = new Regex(".*my (.*) is.*");
-            if (regex.IsMatch("This is an example string and my data is here"))
-            {
-                var myCapturedText = regex.Match("This is an example string and my data is here").Groups[1].Value;
-                Console.WriteLine("This is my captured text: {0}", myCapturedText);
-            }
-
-            Debug.WriteLine(sb.ToString());*/
-        }
-
-        private List<Storage.Message> _deep_attachments(Storage.Message msg, string[] supported, List<Storage.Message> l = null) {
-            if (msg == null) throw new ArgumentNullException(nameof(msg));
-            if (supported == null) throw new ArgumentNullException(nameof(supported));
-            if (supported.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(supported));
-
-            if (l == null)
-                l = new List<Storage.Message>();
-
-            var attch = new List<object>(msg.Attachments);
-            var innermessages = attch.TakeoutWhereType<object, Storage.Message>().Concat(
-                    attch.Cast<Storage.Attachment>()
-                        .Where(att => supported.Any(s => Path.GetExtension(att.FileName).EndsWith(s, true, CultureInfo.InvariantCulture)))
-                        .Select(att => {
-                            using (var ms = new MemoryStream(att.Data, false))
-                                return new Storage.Message(ms);
-                        }))
-                .ToList();
-            l.AddRange(innermessages);
-
-            foreach (var im in innermessages) {
-                _deep_attachments(im, supported, l);
-            }
-
-            return l;
-        }
-
-        private List<Storage.Message> extractMessages(Storage.Message msg, string[] supported) {
-            var l = new List<Storage.Message>();
-
-            var attch = new List<object>(msg.Attachments);
-            var innermessages = attch.TakeoutWhereType<object, Storage.Message>().Concat(
-                    attch.Cast<Storage.Attachment>()
-                        .Where(att => supported.Any(s => Path.GetExtension(att.FileName).EndsWith(s, true, CultureInfo.InvariantCulture)))
-                        .Select(att => {
-                            using (var ms = new MemoryStream(att.Data, false))
-                                return new Storage.Message(ms);
-                        }))
-                .ToList();
-            l.AddRange(innermessages);
-            return l;
-        }
+        }*/
 
         #endregion
 
@@ -361,8 +275,7 @@ namespace MailFinder {
             if (val == false) {
                 Bag.Set("deepfolder", true);
                 this.btnRecusive.BackgroundImage = global::MailFinder.Properties.Resources.folderblue;
-            }
-            else {
+            } else {
                 Bag.Set("deepfolder", false);
                 this.btnRecusive.BackgroundImage = global::MailFinder.Properties.Resources.folderoff;
             }
@@ -373,8 +286,7 @@ namespace MailFinder {
             if (val == false) {
                 Bag.Set("deepattachments", true);
                 this.btnAttachments.BackgroundImage = global::MailFinder.Properties.Resources.clip;
-            }
-            else {
+            } else {
                 Bag.Set("deepattachments", false);
                 this.btnAttachments.BackgroundImage = global::MailFinder.Properties.Resources.clipoff;
             }
@@ -382,7 +294,7 @@ namespace MailFinder {
 
         private void MainForm_Paint(object sender, PaintEventArgs e) {
             var r = this.DisplayRectangle;
-            r = new Rectangle(r.Location.X, r.Location.Y, r.Width-1, r.Height-1);
+            r = new Rectangle(r.Location.X, r.Location.Y, r.Width - 1, r.Height - 1);
             e.Graphics.DrawRectangle(new Pen(Color.Black, 1), r);
         }
     }

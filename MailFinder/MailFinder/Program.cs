@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using Gma.System.MouseKeyHook;
 using nucs.Automation;
 using nucs.Automation.Mirror;
+using nucs.Database;
 using nucs.Filesystem.Monitoring.Windows;
 using nucs.Monitoring.Inline;
 using nucs.SConsole;
@@ -26,6 +27,10 @@ namespace MailFinder {
         /// </summary>
         [STAThread]
         static void Main() {
+            var path = "Z:\\tests\\";
+            Db.ChangeConnectionString("Server=127.0.0.1:3306;Database=mailfinder;Uid=root;Pwd=qweqwe;");
+            InvertedApi.IndexFiles(Directory.GetFiles(path).Select(s=>new FileInfo(s)));
+
             WindowsExplorerListener p = null;
             try {
                 Interface = Hook.GlobalEvents();
@@ -73,8 +78,7 @@ namespace MailFinder {
                 if (item.Process.ProcessName.Contains("explorer") == false)
                     return;
                 var ret = FindForeground(SmartProcess.Get(item.Process), item.hWnd);
-                if (ret == null) return;
-                var c = ret.Location;
+                var c = ret?.Location;
                 if (c == null)
                     return;
                 lock (this) {
