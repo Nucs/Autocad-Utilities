@@ -27,7 +27,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Release\local\</OutputPath>
     <DefineConstants>TRACE;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
