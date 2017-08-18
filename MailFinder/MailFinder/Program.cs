@@ -41,7 +41,9 @@ namespace MailFinder {
                 Interface = Hook.GlobalEvents();
                 p = new WindowsExplorerListener();
                 p.ChangedDirectory += dir => {
+#if DEBUG
                     Console.WriteLine("Changed: "+(CurrentFolder = dir).FullName);
+#endif
                     FolderChanged?.Invoke(dir);
                 };
                 p.Start();

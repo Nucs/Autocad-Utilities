@@ -32,10 +32,10 @@
             this.lblPath = new System.Windows.Forms.Label();
             this.lstResults = new BrightIdeasSoftware.ObjectListView();
             this.clmSent = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
+            this.clmScore = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.clmTitle = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.clmSource = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.clmPath = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.clmScore = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.lblStatus = new System.Windows.Forms.Label();
             this.lblResultsCount = new System.Windows.Forms.Label();
             this.btnClearHistory = new System.Windows.Forms.Button();
@@ -94,6 +94,7 @@
             this.lstResults.TabIndex = 8;
             this.lstResults.UseCompatibleStateImageBehavior = false;
             this.lstResults.View = System.Windows.Forms.View.Details;
+            this.lstResults.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lstResults_ColumnClick);
             this.lstResults.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lstResults_MouseDoubleClick);
             // 
             // clmSent
@@ -104,6 +105,12 @@
             this.clmSent.IsEditable = false;
             this.clmSent.Text = "Sent On";
             this.clmSent.Width = 115;
+            // 
+            // clmScore
+            // 
+            this.clmScore.AspectName = "Score";
+            this.clmScore.DisplayIndex = 3;
+            this.clmScore.Text = "Score";
             // 
             // clmTitle
             // 
@@ -133,12 +140,6 @@
             this.clmPath.IsEditable = false;
             this.clmPath.IsVisible = false;
             this.clmPath.Text = "Path";
-            // 
-            // clmScore
-            // 
-            this.clmScore.AspectName = "Score";
-            this.clmScore.DisplayIndex = 3;
-            this.clmScore.Text = "Score";
             // 
             // lblStatus
             // 

@@ -36,7 +36,6 @@ namespace MailFinder {
             lstResults.Sorting = SortOrder.Descending;
             lstResults.CustomSorter = CustomSorter;
             lstResults.ShowGroups = false;
-            lstResults.ListViewItemSorter = new ResultsComparer(SortOrder.Descending);
             lstResults.PrimarySortColumn = new OLVColumn("Sent On", "Sent");
             lstResults.SecondarySortColumn = new OLVColumn("Title", "Title");
             //this.lstResults.PrimarySortColumn = new OLVColumn("Sent On", "Sent");
@@ -44,6 +43,18 @@ namespace MailFinder {
             Executer = new QueueThread<ParentTask>();
             Executer.TaskQueued += ExecuterOnTaskQueued;
             Program.FolderChanged += FolderChangedHandler;
+            lstResults.BeforeSorting += LstResultsOnBeforeSorting;
+        }
+
+        private void LstResultsOnBeforeSorting(object sender, BeforeSortingEventArgs args) {
+            if (args.ColumnToSort.AspectName == "Title") {
+                args.SecondaryColumnToSort = new OLVColumn("Sent On", "Sent");
+                args.SecondarySortOrder = SortOrder.Descending;
+            } else if (args.ColumnToSort.AspectName == "Score") {
+                args.SecondaryColumnToSort = new OLVColumn("Sent On", "Sent");
+                args.SecondarySortOrder = SortOrder.Descending;
+            }
+            //lstResults.ListViewItemSorter = new ResultsComparer(args.ColumnToSort, SortOrder.Descending);
         }
 
         public static SettingsBag Bag {
@@ -78,8 +89,11 @@ namespace MailFinder {
             };
         }
 
+        private void lstResults_ColumnClick(object sender, ColumnClickEventArgs e) {
+        }
+
         private void CustomSorter(OLVColumn column, SortOrder sortOrder) {
-            if (column.Text == "Sent On" || column.Text == "Score") lstResults.ListViewItemSorter = new ResultsComparer(sortOrder);
+            if (column.Text == "Sent On") lstResults.ListViewItemSorter = new ResultsComparer(column, sortOrder);
             else
                 lstResults.ListViewItemSorter = new ColumnComparer(column, sortOrder);
         }
@@ -194,7 +208,7 @@ namespace MailFinder {
         }
 
         private void TextChangedHandler(object sender, EventArgs e) {
-            var term = txtText?.Text.Trim(' ', '\n', '\r', '\t').Replace('*','%') ?? "";
+            var term = txtText?.Text.Trim(' ', '\n', '\r', '\t').Replace('*', '%') ?? "";
             if (string.IsNullOrEmpty(term))
                 return;
             var current = Program.CurrentFolder;
@@ -368,7 +382,7 @@ namespace MailFinder {
                 Bag.Set("deepattachments", false);
                 btnAttachments.BackgroundImage = Resources.clipoff;
             }
-            TextChangedHandler(null,null);
+            TextChangedHandler(null, null);
         }
 
         private void btnRegex_Click(object sender, EventArgs e) {

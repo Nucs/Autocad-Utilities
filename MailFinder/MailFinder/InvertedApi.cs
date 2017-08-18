@@ -47,9 +47,6 @@ namespace MailFinder {
             var p = paths?.Select(pa => (Path.HasExtension(pa) ? Path.GetDirectoryName(pa) : pa)?.Replace('/','\\')).Where(pa=>pa!=null && Path.GetDirectoryName(pa)!=null).ToArray() ?? new string[0];
             if (p.Length==0)
                 return new IndexedFile[0];
-            foreach (var s in p) {
-                Console.WriteLine("Proccessing: "+s);
-            }
             bool attachments = Bag.Get("deepattachments", false);
             bool like = Bag.Get("regex", false) && query.IndexOfAny(new []{'%','_'})!=-1;
             string q = $@"
@@ -62,7 +59,7 @@ namespace MailFinder {
                 GROUP BY (MD5)
 	            HAVING score > 0 OR innerscore > 0
 	            ORDER BY score DESC ;";
-            Console.WriteLine(q);
+            //Console.WriteLine(q);
             return Db.Query<ScoredIndexedFile>(q, new { query, paths = string.Join("|", p)}).Cast<IndexedFile>().ToArray();
         }
 
