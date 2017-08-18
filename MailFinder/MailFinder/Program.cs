@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -21,21 +22,28 @@ namespace MailFinder {
     static class Program {
         public static IKeyboardMouseEvents Interface;
         public static DirectoryInfo CurrentFolder { get; private set; }
-
+        public static event Action<DirectoryInfo> FolderChanged;
+        public static readonly CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main() {
             var path = "C:\\tests\\";
-            Db.ChangeConnectionString("Server=192.168.102.95;Database=mailfinder;Uid=worldwide;Pwd=qweqweqwe!@#;");
-            InvertedApi.IndexFiles(Directory.GetFiles(path).Select(s=>new FileInfo(s)));
-            var ret = InvertedApi.Search("afsfdgsfg");
+            Db.ChangeConnectionString("Server=127.0.0.1;Database=mailfinder;Uid=root;Pwd=qweqwe;");
+            //Db.ChangeConnectionString("Server=192.168.102.95;Database=mailfinder;Uid=worldwide;Pwd=qweqweqwe!@#;");
+            if (Db.TestConnection() is Exception e) {
+                MessageBox.Show(e.ToString(), "Exception Cought.");
+                return;
+            }
             WindowsExplorerListener p = null;
             try {
                 Interface = Hook.GlobalEvents();
                 p = new WindowsExplorerListener();
-                p.ChangedDirectory += dir => { Console.WriteLine((CurrentFolder = dir).FullName); };
+                p.ChangedDirectory += dir => {
+                    Console.WriteLine("Changed: "+(CurrentFolder = dir).FullName);
+                    FolderChanged?.Invoke(dir);
+                };
                 p.Start();
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);

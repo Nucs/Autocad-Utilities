@@ -271,5 +271,40 @@ namespace autonet {
                         .ToList();
             }
         }
+
+        /// <summary>
+        ///     Ask a question, dont add : or ? at the end nor \n at the beggining
+        /// </summary>
+        /// <param name="question"></param>
+        /// <param name="defaultval"></param>
+        /// <returns></returns>
+        public static bool? AskQuestion(string question, bool defaultval) {
+            recapture:
+            PromptStringOptions opts = new PromptStringOptions($"\n{question}: [Y/N] ");
+            opts.AllowSpaces = false;
+            opts.DefaultValue = defaultval ? "Y" : "N";
+            opts.UseDefaultValue = true;
+            
+            PromptResult ret = Editor.GetString(opts);
+            if (ret.Status == PromptStatus.Cancel)
+                return null;
+            var txt = ret.StringResult;
+            switch (txt.ToLowerInvariant()) {
+                case "true":
+                case "yes":
+                case "y":
+                case "1":
+                    return true;
+                case "false":
+                case "no":
+                case "n":
+                case "0":
+                    return false;
+            }
+
+            Editor.WriteMessage("\nInvalid Input [Y/N].");
+            goto recapture;
+        }
+
     }
 }

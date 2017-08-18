@@ -1,43 +1,56 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security;
-using System.Security.Cryptography;
-using System.Text;
+using System.Media;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using autonet.Common.Settings;
-using autonet.Extensions;
 using autonet.Settings;
 using BrightIdeasSoftware;
-using MailFinder.FileTypes;
+using Common;
+using MailFinder.Helpers;
 using MailFinder.Properties;
-using MsgReader.Outlook;
-using nucs.Filesystem;
 using NHotkey;
 using NHotkey.WindowsForms;
-using Paths = Common.Paths;
 
 namespace MailFinder {
     public partial class MainForm : Form {
-        private SettingsBag _bag;
+        public const string Version = "1.0.0.0";
+        private static SettingsBag _bag;
+        private static readonly object locker_bag = new object();
+
+        private readonly Image _smallClip = ResizeImage(Resources.clip, 8, 8);
+        public QueueThread<ParentTask> Executer;
 
         public MainForm() {
             InitializeComponent();
-            this.TopMost = true;
+            TopMost = true;
             HotkeyManager.Current.AddOrReplace("Toggle", Keys.F10, true, HotkeyOnKeyPressed);
-            Program.Interface.MouseMove += MouseMovementDetection;
-            this.lstResults.PrimarySortColumn = new OLVColumn("Path", "Path");
+            //Program.Interface.MouseMove += MouseMovementDetection;
+            lstResults.Sorting = SortOrder.Descending;
+            lstResults.CustomSorter = CustomSorter;
+            lstResults.ShowGroups = false;
+            lstResults.ListViewItemSorter = new ResultsComparer(SortOrder.Descending);
+            lstResults.PrimarySortColumn = new OLVColumn("Sent On", "Sent");
+            lstResults.SecondarySortColumn = new OLVColumn("Title", "Title");
+            //this.lstResults.PrimarySortColumn = new OLVColumn("Sent On", "Sent");
             lstResults.RowHeight = -1;
+            Executer = new QueueThread<ParentTask>();
+            Executer.TaskQueued += ExecuterOnTaskQueued;
+            Program.FolderChanged += FolderChangedHandler;
         }
 
-        public SettingsBag Bag {
+        public static SettingsBag Bag {
             get {
-                lock (this) {
+                if (_bag != null)
+                    return _bag;
+                lock (locker_bag) {
                     if (_bag == null) {
                         _bag = _bag = JsonConfiguration.Load<SettingsBag>(Paths.ConfigFile("MailFinder.config").FullName);
                         _bag.Autosave = true;
@@ -45,56 +58,49 @@ namespace MailFinder {
                     return _bag;
                 }
             }
-            set { _bag = value; }
+            private set => _bag = value;
         }
 
-
-        private void MouseMovementDetection(object sender, MouseEventArgs args) {
-            /*if (this.DistanceFromForm(args.Location) > 15)
-                this.SetDesktopLocation(args.X + 5, args.Y + 5);*/
-            FlyttaMot(0);
+        private void ExecuterOnTaskQueued(QueuedTask<ParentTask> task) {
+            task.StateChanged += (t, s) => {
+                switch (s) {
+                    case TaskState.Executing:
+                        Invoke(() => { lblStatus.Text = t.Description; });
+                        break;
+                    case TaskState.Cancelled:
+                    case TaskState.Executed:
+                        Invoke(() => {
+                            if (lblStatus.Text.Equals(t.Description, StringComparison.InvariantCultureIgnoreCase))
+                                lblStatus.Text = "Idle";
+                        });
+                        break;
+                }
+            };
         }
 
-        #region Editor Buttons
-
-        private void btnRtl_Click(object sender, EventArgs e) {
-            txtText.RightToLeft = RightToLeft.Yes;
-            Bag["rtl"] = true;
+        private void CustomSorter(OLVColumn column, SortOrder sortOrder) {
+            if (column.Text == "Sent On" || column.Text == "Score") lstResults.ListViewItemSorter = new ResultsComparer(sortOrder);
+            else
+                lstResults.ListViewItemSorter = new ColumnComparer(column, sortOrder);
         }
-
-        private void btnLtr_Click(object sender, EventArgs e) {
-            txtText.RightToLeft = RightToLeft.No;
-            Bag["rtl"] = false;
-        }
-
-
-        private void btnExit_Click(object sender, EventArgs e) {
-            this.Close();
-        }
-
-        #endregion
 
         private void Form1_Load(object sender, EventArgs e) {
             var pos = Cursor.Position;
-            this.SetDesktopLocation(pos.X, pos.Y);
-            this.txtText.RightToLeft = (Bag["rtl"] as bool? ?? false) == true ? RightToLeft.Yes : RightToLeft.No;
-            this.btnRecusive.BackgroundImage = Bag.Get("deepfolder", false) == false
-                ? Properties.Resources.folderoff
-                : Properties.Resources.folderblue;
-            this.btnAttachments.BackgroundImage = Bag.Get("deepattachments", false) == false
-                ? global::MailFinder.Properties.Resources.clipoff
-                : global::MailFinder.Properties.Resources.clip;
-
-            //test:
-            var smaller = ResizeImage(Resources.clip, 10, 10);
-            var smaller2 = ResizeImage(Resources.folder, 10, 10);
-            var a = new SearchResult() {Path = "C:\\lol\\wtf", Term = "sometext more", Image = smaller};
-            var b = new SearchResult() {Path = "C:\\lol\\wtf2", Term = "sometext more more", Image = smaller2};
-            this.lstResults.SetObjects(new[] {a, b, b, a, a, a, a, a});
+            SetDesktopLocation(pos.X, pos.Y);
+            txtText.RightToLeft = (Bag["rtl"] as bool? ?? false) ? RightToLeft.Yes : RightToLeft.No;
+            btnRecusive.BackgroundImage = Bag.Get("deepfolder", false) == false
+                ? Resources.folderoff
+                : Resources.folderblue;
+            btnRegex.BackgroundImage = Bag.Get("regex", false) == false
+                ? Resources.regexoff
+                : Resources.regex;
+            btnAttachments.BackgroundImage = Bag.Get("deepattachments", false) == false
+                ? Resources.clipoff
+                : Resources.clip;
         }
 
         /// <summary>
-        /// Resize the image to the specified width and height.
+        ///     Resize the image to the specified width and height.
         /// </summary>
         /// <param name="image">The image to resize.</param>
         /// <param name="width">The width to resize to.</param>
@@ -141,72 +147,142 @@ namespace MailFinder {
             double? widthScale = null;
             double? heightScale = null;
 
-            if (maxWidth.HasValue) {
-                widthScale = maxWidth.Value / (double) from.Width;
-            }
-            if (maxHeight.HasValue) {
-                heightScale = maxHeight.Value / (double) from.Height;
-            }
+            if (maxWidth.HasValue) widthScale = maxWidth.Value / (double) from.Width;
+            if (maxHeight.HasValue) heightScale = maxHeight.Value / (double) from.Height;
 
-            double scale = Math.Min((double) (widthScale ?? heightScale),
+            var scale = Math.Min((double) (widthScale ?? heightScale),
                 (double) (heightScale ?? widthScale));
 
             return new Size((int) Math.Floor(from.Width * scale), (int) Math.Ceiling(from.Height * scale));
         }
 
-        #region Searching
+        #region Searching & Index
 
-        private void txtText_TextChanged(object sender, EventArgs e) {
-            var term = txtText?.Text.Trim(' ', '\n', '\r', '\t') ?? "";
-            if (string.IsNullOrEmpty(term))
+        private void FolderChangedHandler(DirectoryInfo dir) {
+            if (!Visible || dir == null || dir.Parent == null)
                 return;
-
-            //todo handle new text search
-
-            //Process(term);
+            Executer.QueueTask(new DirectoryIndexTask(FolderChangedTask) {Search = dir, Description = $"Indexing folder " + dir.FullName});
+            Invoke(new MethodInvoker(() => lblPath.Text = dir.FullName));
+            TextChangedHandler(null, null);
         }
 
-        private readonly CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
+        public readonly List<string> ProcessedFoldersHistory = new List<string>();
 
-        public const string Version = "1.0.0.0";
-/*        private void Process(string term) {
-            var current = Program.CurrentFolder;
-            if (current == null)
-                return;
-            var index = current.SubFolder("$index").EnsureCreated();
-
-            index.Attributes = FileAttributes.Hidden;
-
-            lblPath.Invoke(new MethodInvoker(() => lblPath.Text = current.FullName));
-            var recusive = Bag.Data["deepfolder"] as bool? ?? false;
-            var attachments = Bag.Data["deepattachments"] as bool? ?? false;
-            var files = recusive ? FileSearch.EnumerateFilesDeep(current, "*.msg") : FileSearch.GetFiles(current, "*.msg");
-            foreach (var file in files) {
-                var f = file.FullName;
-                using (var msg = new Storage.Message(f)) {
-                    var main = MessageToString(msg);
-                    var attchs = (attachments ? _deep_attachments(msg, new[] { "msg" }) : extractMessages(msg, new[] { "msg" })).Select(MessageToString).ToArray();
-                    var n = new SearchableFile() {Version = Version, Content = main, Attachments = attchs, Path = file.FullName};
-                    try {
-                        n.MD5 = file.CalculateMD5();
-                    } catch (SecurityException) {} catch (IOException) {} catch (UnauthorizedAccessException) {}
-                }
+        private void FolderChangedTask(ParentTask task, CancellationToken token, ProgressDesciber progress) {
+            try {
+                if (!Visible || token.IsCancellationRequested)
+                    return;
+                var t = (DirectoryIndexTask) task;
+                var depth = Bag.Get("deepfolder", false) ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                if (depth == SearchOption.AllDirectories && t.Search.Parent == null) //skip root folders
+                    return;
+                var p = ProcessedFoldersHistory.ToArray();
+                var files = depth == SearchOption.AllDirectories
+                    ? FileSearches.EnumerateFilesDeep(t.Search, token, "*.msg")
+                    : t.Search.EnumerateFiles("*.msg", depth)
+                        .Select(fi => {
+                            if (token.IsCancellationRequested || p.Any(used => Paths.CompareTo(used, fi.FullName)))
+                                return null;
+                            ProcessedFoldersHistory.Add(fi.FullName);
+                            return fi;
+                        })
+                        .Where(fi => fi != null);
+                InvertedApi.IndexFiles(files, token, false);
+            } catch (Exception e) {
+                //todo log errors.
             }
-            hoot.Save();
-            //todo add hidden msgtext file 
-        }*/
+        }
+
+        private void TextChangedHandler(object sender, EventArgs e) {
+            var term = txtText?.Text.Trim(' ', '\n', '\r', '\t').Replace('*','%') ?? "";
+            if (string.IsNullOrEmpty(term))
+                return;
+            var current = Program.CurrentFolder;
+            if (current == null) return;
+            Executer.CancelQueuedWhere(task => task is DirectoryIndexTask);
+            Executer.CancelCurrentIf(task => task is DirectoryIndexTask);
+            Executer.QueueTask(new SearchTask((task, token, progress) => TextChangedTask(current, term, token, progress)) {Description = $"Searching term \"{term}\" inside {current.FullName}"});
+        }
+
+        private void TextChangedTask(DirectoryInfo current, string term, CancellationToken token, ProgressDesciber progress) {
+            if (token.IsCancellationRequested)
+                return;
+
+            var recusive = Bag.Get("deepfolder", false);
+            if (recusive && current.Parent == null)
+                recusive = false;
+            if (token.IsCancellationRequested)
+                return;
+            var _results = InvertedApi.Search(term, recusive ? FileSearches.EnumerateDirectoriesDeep(current, token) : new[] {current})
+                .Cast<ScoredIndexedFile>()
+                .OrderByDescending(o => o.TotalScore)
+                .ToArray();
+
+            if (_results.Length == 0) {
+                Invoke(() => {
+                    lstResults.ClearObjects();
+                    lblResultsCount.Text = "0 Results";
+                });
+                return;
+            }
+
+            var maxscore = _results[0].TotalScore;
+            var results = _results.Select(o => {
+                    var r = new SearchResult {
+                        Sent = o.Date,
+                        Path = o.Path,
+                        Title = o.Title,
+                        Score = Math.Round(o.TotalScore / (maxscore * 1d) * 100, 2, MidpointRounding.AwayFromZero)
+                    };
+                    if (o.TotalScore == 0) return null;
+                    if (o.Score > 0 && o.Innerscore == 0) r.Image = null;
+                    else if (o.Score == 0d && o.Innerscore > 0) r.Image = _smallClip;
+                    return r;
+                })
+                .Where(o => o != null)
+                .ToArray();
+            Invoke(() => {
+                lstResults.SetObjects(results);
+                lblResultsCount.Text = $"{results.Length} Results";
+            });
+        }
+
+        #endregion
+
+        #region Editor Buttons
+
+        private void btnRtl_Click(object sender, EventArgs e) {
+            txtText.RightToLeft = RightToLeft.Yes;
+            Bag["rtl"] = true;
+            txtText.Focus();
+        }
+
+        private void btnLtr_Click(object sender, EventArgs e) {
+            txtText.RightToLeft = RightToLeft.No;
+            Bag["rtl"] = false;
+            txtText.Focus();
+        }
+
+
+        private void btnExit_Click(object sender, EventArgs e) {
+            Close();
+        }
 
         #endregion
 
         #region Draggable
 
+        private void MouseMovementDetection(object sender, MouseEventArgs args) {
+            //FlyttaMot(0);
+        }
+
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
 
-        [System.Runtime.InteropServices.DllImportAttribute("user32.dll")]
+        [DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 
-        [System.Runtime.InteropServices.DllImportAttribute("user32.dll")]
+        [DllImport("user32.dll")]
         public static extern bool ReleaseCapture();
 
 
@@ -222,81 +298,132 @@ namespace MailFinder {
         #region Hotkey
 
         private void HotkeyOnKeyPressed(object sender, HotkeyEventArgs args) {
-            this.Invoke(new MethodInvoker(HotkeyPressed));
+            Invoke(new MethodInvoker(HotkeyPressed));
         }
 
         private void HotkeyPressed() {
-            if (this.Visible) {
+            if (Visible) {
                 Hide();
                 return;
             }
-            this.Show();
+            Show();
             Form1_Load(this, EventArgs.Empty);
             txtText.Focus();
             txtText.SelectAll();
-            this.BringToFront();
+            BringToFront();
         }
 
         public Point CursorPoint => Cursor.Position;
 
         public void FlyttaMot(int safedistance = 0) {
-            var bounds = this.Bounds;
+            var bounds = Bounds;
             var c = CursorPoint;
             if (bounds.Contains(c))
                 return;
 
             int xadd = 0, yadd = 0;
-            if (bounds.Bottom < c.Y) {
-                yadd += c.Y - bounds.Bottom;
-            }
+            if (bounds.Bottom < c.Y) yadd += c.Y - bounds.Bottom;
 
-            if (bounds.Right < c.X) {
-                xadd += c.X - bounds.Right;
-            }
+            if (bounds.Right < c.X) xadd += c.X - bounds.Right;
 
             if (bounds.Left > c.X)
                 xadd -= Math.Abs(bounds.Left - c.X);
-            if (bounds.Top > c.Y) {
-                yadd -= Math.Abs(bounds.Top - c.Y);
-            }
+            if (bounds.Top > c.Y) yadd -= Math.Abs(bounds.Top - c.Y);
             var x = bounds.X + xadd;
             var y = bounds.Y + yadd;
             if (Math.Abs(xadd) <= safedistance)
                 x = bounds.X;
             if (Math.Abs(yadd) <= safedistance)
                 y = bounds.Y;
-            this.SetDesktopLocation(x, y);
+            SetDesktopLocation(x, y);
         }
 
         #endregion
+
+        #region UI
+
+        private void MainForm_Shown(object sender, EventArgs e) {
+            if (Visible)
+                FolderChangedHandler(Program.CurrentFolder);
+        }
 
         private void btnRecusive_Click(object sender, EventArgs e) {
             var val = Bag.Get("deepfolder", false);
             if (val == false) {
                 Bag.Set("deepfolder", true);
-                this.btnRecusive.BackgroundImage = global::MailFinder.Properties.Resources.folderblue;
+                btnRecusive.BackgroundImage = Resources.folderblue;
             } else {
                 Bag.Set("deepfolder", false);
-                this.btnRecusive.BackgroundImage = global::MailFinder.Properties.Resources.folderoff;
+                btnRecusive.BackgroundImage = Resources.folderoff;
             }
+            FolderChangedHandler(Program.CurrentFolder);
         }
 
         private void btnAttachments_Click(object sender, EventArgs e) {
             var val = Bag.Get("deepattachments", false);
             if (val == false) {
                 Bag.Set("deepattachments", true);
-                this.btnAttachments.BackgroundImage = global::MailFinder.Properties.Resources.clip;
+                btnAttachments.BackgroundImage = Resources.clip;
             } else {
                 Bag.Set("deepattachments", false);
-                this.btnAttachments.BackgroundImage = global::MailFinder.Properties.Resources.clipoff;
+                btnAttachments.BackgroundImage = Resources.clipoff;
             }
+            TextChangedHandler(null,null);
         }
 
+        private void btnRegex_Click(object sender, EventArgs e) {
+            var val = Bag.Get("regex", false);
+            if (val == false) {
+                Bag.Set("regex", true);
+                btnRegex.BackgroundImage = Resources.regex;
+            } else {
+                Bag.Set("regex", false);
+                btnRegex.BackgroundImage = Resources.regexoff;
+            }
+            TextChangedHandler(null, null);
+        }
+
+        /// <summary>
+        ///     1px border
+        /// </summary>
         private void MainForm_Paint(object sender, PaintEventArgs e) {
-            var r = this.DisplayRectangle;
+            var r = DisplayRectangle;
             r = new Rectangle(r.Location.X, r.Location.Y, r.Width - 1, r.Height - 1);
             e.Graphics.DrawRectangle(new Pen(Color.Black, 1), r);
         }
+
+        private void lstResults_MouseDoubleClick(object sender, MouseEventArgs e) {
+            var i = lstResults.HitTest(e.X, e.Y).Item as OLVListItem;
+            if (i != null)
+                try {
+                    Process.Start((i.RowObject as SearchResult).Path);
+                } catch {
+                    SystemSounds.Beep.Play();
+                }
+        }
+
+        private void Invoke(Action act) {
+            if (InvokeRequired == false) act();
+            else
+                Invoke(new MethodInvoker(act));
+        }
+
+        private void btnClearHistory_Click(object sender, EventArgs e) {
+            ProcessedFoldersHistory.Clear();
+            var current = Program.CurrentFolder;
+            if (current == null) return;
+            FolderChangedHandler(current);
+        }
+
+        private void lblStatus_Click(object sender, EventArgs e) { }
+
+        private void lblPath_Click(object sender, EventArgs e) {
+            try {
+                Process.Start(new DirectoryInfo(lblPath.Text).FullName);
+            } catch { }
+        }
+
+        #endregion
     }
 }
 
@@ -307,7 +434,7 @@ namespace nucs.Winforms.Maths {
             if (rect.Contains(p))
                 return 0d;
 
-            var corners = new[] {new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y), new Point(rect.X, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y + rect.Height),};
+            var corners = new[] {new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y), new Point(rect.X, rect.Y + rect.Height), new Point(rect.X + rect.Width, rect.Y + rect.Height)};
             return corners.Select(c => c.Distance(p)).Min();
         }
 

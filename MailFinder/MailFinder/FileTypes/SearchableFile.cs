@@ -4,6 +4,8 @@ using System.IO;
 
 namespace MailFinder.FileTypes {
     public abstract class SearchableFile : IEquatable<SearchableFile>, IComparable<SearchableFile>, IComparable {
+        public string Date { get; set; }
+        public string Title { get; set; }
         public string MD5 { get; set; }
         public string Version { get; set; }
         public string Path { get; set; }

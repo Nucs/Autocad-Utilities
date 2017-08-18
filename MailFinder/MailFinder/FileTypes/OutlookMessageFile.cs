@@ -15,31 +15,27 @@ namespace MailFinder.FileTypes {
     public class OutlookMessageFile : SearchableFile {
         public string[] Attachments { get; set; }
 
-        private OutlookMessageFile() {} //for json
+        private OutlookMessageFile() { } //for json
 
         public OutlookMessageFile(FileInfo file, bool includeattachments = true) : base(file) {
             using (var stream = FileShared.OpenRead(file))
-                using (var msg = new Storage.Message(stream)) { //todo this part only loads... we need to add a part that will manage it and search in cache.
-                    var main = ConvertToString(msg);
-                    var attchs = (includeattachments ? _deep_attachments(msg, new[] {"msg"}) : extractMessages(msg, new[] {"msg"})).Select(ConvertToString).ToArray();
-                    Version = Version;
-                    Content = main;
-                    Attachments = attchs;
-                    Path = file.FullName;
-                    try {
-                        MD5 = file.CalculateMD5(stream);
-                    } catch (SecurityException) { } catch (IOException) { } catch (UnauthorizedAccessException) { }
-                }
+                _load(file, stream, includeattachments);
         }
 
-        public OutlookMessageFile(FileInfo file, Stream stream, bool includeattachments=true) : base(file,stream) {
+        public OutlookMessageFile(FileInfo file, Stream stream, bool includeattachments = true) : base(file, stream) {
+            _load(file, stream, includeattachments);
+        }
+
+        private void _load(FileInfo file, Stream stream, bool includeattachments) {
             using (var msg = new Storage.Message(stream)) {
                 var main = ConvertToString(msg);
                 var attchs = (includeattachments ? _deep_attachments(msg, new[] {"msg"}) : extractMessages(msg, new[] {"msg"})).Select(ConvertToString).ToArray();
+                Title = msg.Subject;
                 Version = Version;
                 Content = main;
                 Attachments = attchs;
                 Path = file.FullName;
+                Date = msg.SentOn?.ToString("G", Program.ILCulture) ?? DateTime.MinValue.ToString("G", Program.ILCulture);
                 try {
                     MD5 = file.CalculateMD5(stream);
                 } catch (SecurityException) { } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -52,35 +48,42 @@ namespace MailFinder.FileTypes {
 
         public override IndexedFile ToIndexedFile() {
             return new IndexedFile() {
+                Title = this.Title,
                 Content = this.Content,
                 MD5 = this.MD5,
-                InnerContent = string.Join("\n\n", this.Attachments??new string[0]),
+                InnerContent = string.Join("\n\n", this.Attachments ?? new string[0]),
                 Path = this.Path,
-                Version = this.Version
+                Version = this.Version,
+                Date = this.Date,
+                Directory = System.IO.Path.GetDirectoryName(this.Path)
             };
         }
 
-        private static readonly CultureInfo ILCulture = CultureInfo.CreateSpecificCulture("he-IL");
 
         public static string ConvertToString(Storage.Message msg) {
             var sb = new StringBuilder();
             var from = msg.Sender;
             var sentOn = msg.SentOn;
-            var recipientsTo = msg.GetEmailRecipients(Storage.Recipient.RecipientType.To, false, false);
-            var recipientsCc = msg.GetEmailRecipients(Storage.Recipient.RecipientType.Cc, false, false);
+
+
             var subject = msg.Subject;
             var body = msg.BodyText;
             // etc...
-
-            sb.AppendLine($"{(sentOn ?? DateTime.MinValue).ToString("g", ILCulture)}");
+            sb.AppendLine($"{(sentOn ?? DateTime.MinValue).ToString("g", Program.ILCulture)}");
             sb.AppendLine($"{from.DisplayName} {from.Email}");
-            sb.AppendLine($"{recipientsTo}");
-            sb.AppendLine($"{recipientsCc}");
+            try {
+                var recipientsTo = msg.GetEmailRecipients(Storage.Recipient.RecipientType.To, false, false);
+                sb.AppendLine($"{recipientsTo}");
+            } catch { }
+            try {
+                var recipientsCc = msg.GetEmailRecipients(Storage.Recipient.RecipientType.Cc, false, false);
+                sb.AppendLine($"{recipientsCc}");
+            } catch { }
             sb.AppendLine($"{subject}");
-            sb.AppendLine($"{string.Join("", msg.GetAttachmentNames().Select(o => o + ";"))}");
+            sb.AppendLine($"{string.Join("", msg.GetAttachmentNames())}");
             sb.AppendLine($"{body}");
 
-            return sb.ToString().Trim('\n','\r','\t').Replace("\n\n", "\n").Replace("\n\n", "\n").ToString();
+            return sb.ToString().Trim('\n', '\r', '\t').Replace("\n\n", "\n").Replace("\n\n", "\n").ToString();
         }
 
         private static List<Storage.Message> _deep_attachments(Storage.Message msg, string[] supported, List<Storage.Message> l = null) {
@@ -126,6 +129,5 @@ namespace MailFinder.FileTypes {
             l.AddRange(innermessages);
             return l;
         }
-
     }
 }

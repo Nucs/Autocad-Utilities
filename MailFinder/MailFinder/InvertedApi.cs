@@ -7,26 +7,63 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Threading;
+using autonet.Settings;
 using MailFinder.Helpers;
 using nucs.Database;
 using Dapper;
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 
 namespace MailFinder {
     public static class InvertedApi {
+
+        public static SettingsBag Bag => MainForm.Bag;
+
+        public static IndexedFile[] Search(string query, string path) {
+            return Search(query, path.ToEnumerable());
+        }
+
+        public static IndexedFile[] Search(string query, DirectoryInfo path) {
+            return Search(query, path.ToEnumerable());
+        }
+
         /// <summary>
         ///     Searches the given query
         /// </summary>
         /// <returns></returns>
-        public static IndexedFile[] Search(string query) {
-            const string q = @"
-                SELECT 
-                    *,
-                    MATCH (content, innercontent) AGAINST (@query IN NATURAL LANGUAGE MODE) AS score
-                FROM mailfinder.files
-                HAVING score > 0
-                ORDER BY score DESC";
-            return Db.Query<ScoredIndexedFile>(q, new {query}).Cast<IndexedFile>().ToArray();
+        public static IndexedFile[] Search(string query, IEnumerable<DirectoryInfo> paths) {
+            return Search(query, paths.Where(d => d != null).Select(d => d.FullName));
+        }
+
+        /// <summary>
+        ///     Searches the given query
+        /// </summary>
+        /// <returns></returns>
+        public static IndexedFile[] Search(string query, IEnumerable<string> paths) {
+            if (string.IsNullOrEmpty(query)) return new IndexedFile[0];
+            var p = paths?.Select(pa => (Path.HasExtension(pa) ? Path.GetDirectoryName(pa) : pa)?.Replace('/','\\')).Where(pa=>pa!=null && Path.GetDirectoryName(pa)!=null).ToArray() ?? new string[0];
+            if (p.Length==0)
+                return new IndexedFile[0];
+            foreach (var s in p) {
+                Console.WriteLine("Proccessing: "+s);
+            }
+            bool attachments = Bag.Get("deepattachments", false);
+            bool like = Bag.Get("regex", false) && query.IndexOfAny(new []{'%','_'})!=-1;
+            string q = $@"
+                SELECT
+		            *,
+		            {(like? "(Content LIKE @query) AS score" : "MATCH (Content) AGAINST (@query IN NATURAL LANGUAGE MODE) AS score")}
+                    {(attachments? $",{(like ? "(Innercontent LIKE @query) AS innerscore" : "MATCH (Innercontent) AGAINST (@query IN NATURAL LANGUAGE MODE) AS innerscore")}" : ",0 AS innerscore")}
+	            FROM mailfinder.files
+	            WHERE {string.Join(" OR ", p.Select(path=>$"`Directory`='{MySQLEscape(path)}'"))}  
+                GROUP BY (MD5)
+	            HAVING score > 0 OR innerscore > 0
+	            ORDER BY score DESC ;";
+            Console.WriteLine(q);
+            return Db.Query<ScoredIndexedFile>(q, new { query, paths = string.Join("|", p)}).Cast<IndexedFile>().ToArray();
         }
 
         public static void IndexFile(FileInfo f) {
@@ -38,21 +75,40 @@ namespace MailFinder {
         /// </summary>
         /// <param name="f"></param>
         /// <param name="verifyexisting"></param>
-        public static void IndexFiles(IEnumerable<FileInfo> f, bool verifyexisting=false) {
-            if (f == null) throw new ArgumentNullException(nameof(f));
-            
-            var allfiles = f.Where(fn => fn != null).Select(ff => ff.FullName).ToArray();
-            var alreadyexist = FilterIndexed(allfiles, verifyexisting).ToArray();
-            var tocreate = allfiles.Except(alreadyexist);
-
-            foreach (var createme in tocreate) {
-                var a = FileParser.Parse(new FileInfo(createme));
-                var pp = a.ToIndexedFile();
-                var b = Db.Insert(pp);
-            }
+        public static void IndexFiles(IEnumerable<FileInfo> f, bool verifyexisting = false) {
+            IndexFiles(f,CancellationToken.None, verifyexisting);
         }
 
-        //todo add a force refresh function that will re-add the data to the database
+        /// <summary>
+        ///     Indexes the files that are not indexed yet.
+        /// </summary>
+        /// <param name="f"></param>
+        /// <param name="verifyexisting"></param>
+        public static void IndexFiles(IEnumerable<FileInfo> f,CancellationToken token, bool verifyexisting = false) {
+            if (token.IsCancellationRequested)
+                return;
+            if (f == null) throw new ArgumentNullException(nameof(f));
+
+            var allfiles = f.Where(fn => fn != null).Select(ff => ff.FullName).ToArray();
+            if (allfiles.Length == 0)
+                return;
+            var alreadyexist = FilterIndexed(allfiles, verifyexisting).ToArray();
+            var tocreate = allfiles.Except(alreadyexist).ToArray();
+            if (tocreate.Length == 0)
+                return;
+
+            foreach (var createme in tocreate) {
+                if (token.IsCancellationRequested)
+                    return;
+                var a = FileParser.Parse(new FileInfo(createme));
+                var pp = a.ToIndexedFile();
+                try {
+                    var b = Db.Insert(pp);
+                } catch (MySqlException e) when (e.Message.Contains("MD5_UNIQUE")) {
+                    //already indexed.
+                }
+            }
+        }
 
         /// <summary>
         ///     Returns a list of those that are already indexed
@@ -61,11 +117,24 @@ namespace MailFinder {
         /// <param name="verifyexisting"></param>
         /// <returns></returns>
         public static string[] FilterIndexed(IEnumerable<string> paths, bool verifyexisting = false) {
+            return FilterIndexed(paths, CancellationToken.None, verifyexisting);
+        }
+
+        /// <summary>
+        ///     Returns a list of those that are already indexed
+        /// </summary>
+        /// <param name="paths"></param>
+        /// <param name="verifyexisting"></param>
+        /// <returns></returns>
+        public static string[] FilterIndexed(IEnumerable<string> paths,CancellationToken token, bool verifyexisting = false) {
             if (paths == null) throw new ArgumentNullException(nameof(paths));
             if (verifyexisting)
                 paths = paths.Where(File.Exists);
-            paths = paths.Select(MySQLEscape).Select(s=>$"'{s}'");
-            return Db.Query<string>($"SELECT Path FROM mailfinder.files WHERE path IN ({string.Join(",", paths)});").ToArray();
+            paths = paths.Select(MySQLEscape).Select(s => $"'{s}'");
+            var p = paths.ToArray();
+            if (p.Length == 0)
+                return new string[0];
+            return Db.Query<string>($"SELECT Path FROM mailfinder.files WHERE path IN ({string.Join(",", p)});").ToArray();
         }
 
         private static string MySQLEscape(string str) {
@@ -90,73 +159,28 @@ namespace MailFinder {
                     }
                 });
         }
-
-        public static IEnumerable<string> And(this Dictionary<string, List<string>> index, string firstTerm, string secondTerm) {
-            return (from d in index
-                    where d.Key.Equals(firstTerm)
-                    select d.Value).SelectMany(x => x)
-                .Intersect
-                ((from d in index
-                    where d.Key.Equals(secondTerm)
-                    select d.Value).SelectMany(x => x));
-        }
-
-        public static IEnumerable<string> Or(this Dictionary<string, List<string>> index, string firstTerm, string secondTerm) {
-            //return (from d in index
-            //        where d.Key.Equals(firstTerm)
-            //        select d.Value).SelectMany(x => x).ToList().Union
-            //                ((from d in index
-            //                  where d.Key.Equals(secondTerm)
-            //                  select d.Value).SelectMany(x => x).ToList()).Distinct();
-
-            return (from d in index
-                    where d.Key.Equals(firstTerm) || d.Key.Equals(secondTerm)
-                    select d.Value).SelectMany(x => x)
-                .Distinct();
-        }
     }
 
     [Table("files")]
     public class IndexedFile {
-
         public int Id { get; set; }
+        public string Title { get; set; }
         public string MD5 { get; set; }
         public string Version { get; set; }
         public string Path { get; set; }
+        [IgnoreSelect]
         public string Content { get; set; }
+        [IgnoreSelect]
         public string InnerContent { get; set; }
+        public string Date { get; set; }
+        public string Directory { get; set; }
     }
 
     public class ScoredIndexedFile : IndexedFile {
         public double Score { get; set; }
-    }
+        public double Innerscore { get; set; }
 
-    class EntryPoint {
-        public static Dictionary<string, List<string>> invertedIndex;
-
-        /*static void Main(string[] args) {
-            invertedIndex = new Dictionary<string, List<string>>();
-            string folder = "C:\\Users\\Elena\\Documents\\Visual Studio 2013\\Projects\\InvertedIndex\\Files\\";
-
-            foreach (string file in Directory.EnumerateFiles(folder, "*.txt")) {
-                List<string> content = System.IO.File.ReadAllText(file).Split(' ').Distinct().ToList();
-                addToIndex(content, file.Replace(folder, ""));
-            }
-
-            var resAnd = invertedIndex.And("star", "sparkling");
-            var resOr = invertedIndex.Or("star", "sparkling");
-
-            Console.ReadLine();
-        }
-
-        private static void addToIndex(List<string> words, FileInfo document) {
-            foreach (var word in words) {
-                if (!invertedIndex.ContainsKey(word)) {
-                    invertedIndex.Add(word, new List<string> {document});
-                } else {
-                    invertedIndex[word].Add(document);
-                }
-            }
-        }*/
+        [IgnoreInsert, IgnoreSelect, IgnoreUpdate, JsonIgnore]
+        public double TotalScore => Score + Innerscore;
     }
 }

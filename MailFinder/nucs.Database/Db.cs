@@ -170,7 +170,7 @@ namespace nucs.Database {
                     goto _retry;
                 } finally {
                     conn.Close();
-                }/* catch (InvalidOperationException e) when (e.Message.EndsWith("was reached.")) {
+                } /* catch (InvalidOperationException e) when (e.Message.EndsWith("was reached.")) {
                     
                 }*/
             }
@@ -883,5 +883,19 @@ namespace nucs.Database {
         #endregion
 
         #endregion
+
+        /// <summary>
+        ///     Performs a basic Select query, will throw if fails.
+        /// </summary>
+        public static Exception TestConnection() {
+            try {
+                var r=Db.Query<int>("Select 1")?.ToArray();
+                if (r==null || r.Length!=1)
+                    throw new IndexOutOfRangeException("Supposed to receive 1 object, did not receive anything.");
+                return null;
+            } catch (Exception e) {
+                return e;
+            }
+        }
     }
 }
