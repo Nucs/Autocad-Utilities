@@ -94,17 +94,30 @@ namespace MailFinder {
             if (tocreate.Length == 0)
                 return;
 
+            List<IndexedFile> toindex = new List<IndexedFile>();
+
             foreach (var createme in tocreate) {
                 if (token.IsCancellationRequested)
                     return;
                 var a = FileParser.Parse(new FileInfo(createme));
                 var pp = a.ToIndexedFile();
-                try {
-                    var b = Db.Insert(pp);
-                } catch (MySqlException e) when (e.Message.Contains("MD5_UNIQUE")) {
+                toindex.Add(pp);
+            }
+            foreach (var i in toindex)
+            {
+                try
+                {
+                    var b = Db.Insert(i);
+                }
+                catch (MySqlException e) when (e.Message.Contains("MD5_UNIQUE"))
+                {
                     //already indexed.
+                } catch (MySqlException e)
+                {
+                    Console.WriteLine(e);
                 }
             }
+            
         }
 
         /// <summary>

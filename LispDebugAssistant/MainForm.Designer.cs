@@ -37,6 +37,8 @@
             this.lstWatching = new System.Windows.Forms.ListBox();
             this.btnClearLog = new System.Windows.Forms.Button();
             this.btnReload = new System.Windows.Forms.Button();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnOnOff
@@ -72,9 +74,9 @@
             // lstLog
             // 
             this.lstLog.FormattingEnabled = true;
-            this.lstLog.Location = new System.Drawing.Point(244, 12);
+            this.lstLog.Location = new System.Drawing.Point(244, 25);
             this.lstLog.Name = "lstLog";
-            this.lstLog.Size = new System.Drawing.Size(558, 251);
+            this.lstLog.Size = new System.Drawing.Size(558, 238);
             this.lstLog.TabIndex = 9;
             // 
             // btnSettings
@@ -90,18 +92,18 @@
             // lstWatching
             // 
             this.lstWatching.FormattingEnabled = true;
-            this.lstWatching.Location = new System.Drawing.Point(15, 12);
+            this.lstWatching.Location = new System.Drawing.Point(15, 25);
             this.lstWatching.Name = "lstWatching";
             this.lstWatching.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.lstWatching.Size = new System.Drawing.Size(223, 251);
+            this.lstWatching.Size = new System.Drawing.Size(223, 238);
             this.lstWatching.TabIndex = 11;
             // 
             // btnClearLog
             // 
             this.btnClearLog.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.btnClearLog.Location = new System.Drawing.Point(758, 239);
+            this.btnClearLog.Location = new System.Drawing.Point(761, 241);
             this.btnClearLog.Name = "btnClearLog";
-            this.btnClearLog.Size = new System.Drawing.Size(42, 22);
+            this.btnClearLog.Size = new System.Drawing.Size(39, 20);
             this.btnClearLog.TabIndex = 12;
             this.btnClearLog.Text = "Clear";
             this.btnClearLog.UseVisualStyleBackColor = true;
@@ -117,11 +119,31 @@
             this.btnReload.UseVisualStyleBackColor = true;
             this.btnReload.Click += new System.EventHandler(this.btnReload_Click);
             // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(19, 9);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(80, 13);
+            this.label1.TabIndex = 14;
+            this.label1.Text = "Watching Files:";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(248, 9);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(30, 13);
+            this.label2.TabIndex = 15;
+            this.label2.Text = "Logs";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(814, 301);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.btnReload);
             this.Controls.Add(this.btnClearLog);
             this.Controls.Add(this.lstWatching);
@@ -152,5 +174,7 @@
         public System.Windows.Forms.ListBox lstWatching;
         public System.Windows.Forms.Button btnClearLog;
         public System.Windows.Forms.Button btnReload;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
     }
 }

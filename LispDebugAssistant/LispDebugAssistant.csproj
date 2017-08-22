@@ -37,6 +37,21 @@
   <PropertyGroup>
     <ApplicationIcon>logo.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug 2013|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug 2013\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;V2013</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release 2013|AnyCPU'">
+    <OutputPath>bin\Release 2013\</OutputPath>
+    <DefineConstants>TRACE;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;V2013</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="AcCoreMgd, Version=22.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AutoCAD.NET.Core.22.0.0\lib\net46\AcCoreMgd.dll</HintPath>
@@ -96,6 +111,9 @@
     <Reference Include="Autodesk.AutoCAD.Interop.Common, Version=21.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AutoCAD-2017.Net.Interop.x64.1.0.0\lib\net46\Autodesk.AutoCAD.Interop.Common.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="BizArk.Core">
+      <HintPath>..\packages\BizArk.Core.3.0.0.35-beta\lib\net45\BizArk.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAPICodePack-Core.1.1.2\lib\Microsoft.WindowsAPICodePack.dll</HintPath>

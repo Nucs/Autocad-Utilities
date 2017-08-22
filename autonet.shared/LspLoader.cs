@@ -14,6 +14,7 @@ using Autodesk.AutoCAD.Runtime;
 using Common;
 using App = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 using Exception = System.Exception;
+using YourCAD.Utilities;
 
 namespace autonet.lsp {
     public static class LspLoader {
@@ -116,7 +117,11 @@ namespace autonet.lsp {
         /// <param name="fullpath"></param>
         public static void LoadFile(string fullpath) {
             try {
+#if V2013
+                CommandLineHelper.ExecuteStringOverInvoke($"(load \"{fullpath.Replace("\\", "/")}\") ");
+#else
                 App.DocumentManager.MdiActiveDocument.SendStringToExecute($"(load \"{fullpath.Replace("\\", "/")}\") ", true, false, true);
+#endif
             }
             catch (Exception e) {
                 throw new Exception($"Failed loading file {fullpath} onto autocad", e);

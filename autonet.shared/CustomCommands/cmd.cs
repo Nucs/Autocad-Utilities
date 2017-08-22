@@ -84,20 +84,17 @@ namespace YourCAD.Utilities {
         //extern static int acedCmd2011(IntPtr resbuf);
 
         [System.Security.SuppressUnmanagedCodeSecurity]
-        [DllImport("accore.dll", EntryPoint = "acedCmd", CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Auto)]
+        [DllImport("accore.dll", EntryPoint = "acedCmd", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         private static extern int acedCmd2013(IntPtr resbuf);
 
         //[DllImport("acad.exe", CallingConvention = CallingConvention.Cdecl, EntryPoint = "acedCmd")]
         [System.Security.SuppressUnmanagedCodeSecurity]
-        [DllImport("acad.exe", EntryPoint = "acedCmd", CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Auto)]
+        [DllImport("acad.exe", EntryPoint = "acedCmd", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         private static extern int acedCmd2012(IntPtr resbuf);
 
         public static void ExecuteStringOverInvoke(string command) {
             try {
-                object activeDocument = Autodesk.AutoCAD.ApplicationServices.DocumentExtension.GetAcadDocument(
-                    Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument);
+                object activeDocument = Autodesk.AutoCAD.ApplicationServices.DocumentExtension.GetAcadDocument(Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument);
                 object[] data = {command};
                 activeDocument.GetType()
                     .InvokeMember(

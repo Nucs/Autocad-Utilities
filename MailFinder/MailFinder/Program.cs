@@ -30,8 +30,8 @@ namespace MailFinder {
         [STAThread]
         static void Main() {
             var path = "C:\\tests\\";
-            Db.ChangeConnectionString("Server=127.0.0.1;Database=mailfinder;Uid=root;Pwd=qweqwe;");
-            //Db.ChangeConnectionString("Server=192.168.102.95;Database=mailfinder;Uid=worldwide;Pwd=qweqweqwe!@#;");
+            //Db.ChangeConnectionString("Server=127.0.0.1;Database=mailfinder;Uid=root;Pwd=qweqwe;");
+            Db.ChangeConnectionString("Server=192.168.102.95;Database=mailfinder;Uid=worldwide;Pwd=qweqweqwe!@#;");
             if (Db.TestConnection() is Exception e) {
                 MessageBox.Show(e.ToString(), "Exception Cought.");
                 return;

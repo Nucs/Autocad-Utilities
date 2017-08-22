@@ -444,7 +444,50 @@ namespace autonet.Forms {
                 }
             }
         }
+        
+        [CommandMethod("SELECTBLOCKS", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        public static void SelectBlocksCommand() {
+            Editor ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
+            Database db = HostApplicationServices.WorkingDatabase;
+            Transaction tr = db.TransactionManager.StartTransaction();
 
+            // Start the transaction
+            try {
+                //Request name filter:
+                PromptStringOptions psto = new PromptStringOptions("\nEnter the regex formula: ");
+                psto.AllowSpaces = true;
+                psto.DefaultValue = "*"; //old block
+
+                PromptResult stres = ed.GetString(psto);
+
+                if (stres.Status != PromptStatus.OK)
+                    return;
+
+                string oldblock = stres.StringResult;
+
+                // Build a filter list so that only
+                // block references are selected
+                TypedValue[] filList = new TypedValue[1] {
+                    new TypedValue((int) DxfCode.Start, "INSERT")
+                };
+                SelectionFilter filter = new SelectionFilter(filList);
+                PromptSelectionOptions opts = new PromptSelectionOptions();
+                opts.MessageForAdding = "Select block references: ";
+                SelectionSet res = Quick.GetImpliedOrSelect(opts, filter);
+
+                // Do nothing if selection is unsuccessful
+                if (res == null) return;
+
+                SelectionSet selSet = res;
+                ObjectId[] idArray = selSet.GetObjectIds();
+                tr.Commit();
+                Quick.SetSelected(idArray);
+            } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+                ed.WriteMessage(("Exception: " + ex.Message));
+            } finally {
+                tr.Dispose();
+            }
+        }
         [CommandMethod("LISTATT", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void ListAttributes() {
             Editor ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
@@ -498,6 +541,7 @@ namespace autonet.Forms {
                     }*/
                 }
                 tr.Commit();
+                Quick.SetSelected(idArray);
             } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
                 ed.WriteMessage(("Exception: " + ex.Message));
             } finally {

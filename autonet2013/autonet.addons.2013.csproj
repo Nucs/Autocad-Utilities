@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;AUTOCAD13;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;AdamsLairWinForms</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -29,7 +29,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;2013;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS</DefineConstants>
+    <DefineConstants>TRACE;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;AdamsLairWinForms</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x64</PlatformTarget>

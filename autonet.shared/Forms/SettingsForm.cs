@@ -12,9 +12,10 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using autonet.Common.Settings;
 using autonet.Extensions;
+#if AdamsLairWinForms
 using AdamsLair.WinForms.ColorControls;
+#endif
 using BizArk.Core;
-
 namespace autonet.Forms {
     public class SettingsForm<TSettings> : Form, ISaveable {
         public virtual TSettings Settings { get; }
@@ -207,6 +208,7 @@ namespace autonet.Forms {
                         throw new InvalidOperationException($"Error binding {typeof(TCtrl).Name} to {Settings.GetType().Name}.{propertyname}, Cannot bind string value to {setprop.PropertyType.Name} value.");
                     binder = new Bindable(Settings, ctrl, setprop, ctrl.GetType().GetProperty(nameof(cmb.Text)));
                     break;
+#if AdamsLairWinForms
                 case ColorShowBox clr:
                     if (setprop.PropertyType != typeof(Color) && !ConvertHelper.CanChangeType(setprop.PropertyType, typeof(Color)))
                         throw new InvalidOperationException($"Error binding {typeof(TCtrl).Name} to {Settings.GetType().Name}.{propertyname}, Cannot bind string value to {setprop.PropertyType.Name} value.");
@@ -221,6 +223,7 @@ namespace autonet.Forms {
                     );
                     binder = new Bindable(Settings, ctrl, setprop, ctrl.GetType().GetProperty(nameof(clr.Color)));
                     break;
+#endif
                 default:
                     throw new NotSupportedException("This control is not supported for automatic binding.");
             }

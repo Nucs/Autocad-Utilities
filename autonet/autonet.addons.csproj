@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;AdamsLairWinForms</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -29,11 +29,23 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Release\local\</OutputPath>
-    <DefineConstants>TRACE;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS</DefineConstants>
+    <DefineConstants>TRACE;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;AdamsLairWinForms</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x64</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug 2013|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug 2013\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;AUTOCAD17;HAVE_XLINQ;HAVE_LINQ;HAVE_ADO_NET;DOTNET;NET40;HAVE_DATA_CONTRACTS;HAVE_CAS;AdamsLairWinForms</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release 2013|AnyCPU'">
+    <OutputPath>bin\Release 2013\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AcCoreMgd, Version=22.0.0.0, Culture=neutral, processorArchitecture=MSIL">

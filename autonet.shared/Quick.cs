@@ -242,7 +242,12 @@ namespace autonet {
             }
             return sel.Status != PromptStatus.OK ? null : sel.Value;
         }
-
+        public static void SetSelected(ObjectId[] ss, bool runsssetfirst = false) {
+            Quick.SetImpliedSelection(ss);
+            //Quick.SetImpliedSelection(Quick.SelectImplied().Value);
+            //if (runsssetfirst)
+            //Quick.Command("(sssetfirst nil (ssget \"I\")) ", false);
+        }
         public static void SetSelected(SelectionSet ss, bool runsssetfirst = false) {
             Quick.SetImpliedSelection(ss);
             //Quick.SetImpliedSelection(Quick.SelectImplied().Value);
