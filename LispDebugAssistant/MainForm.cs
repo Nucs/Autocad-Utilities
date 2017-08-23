@@ -24,7 +24,6 @@ namespace LispDebugAssistant {
         public static AppConfig Config { get; } = JsonConfiguration.Load<AppConfig>();
         public TrayIcon TIcon { get; private set; }
 
-
         public MainForm() {
             InitializeComponent();
             InitlstWatchedMenu();

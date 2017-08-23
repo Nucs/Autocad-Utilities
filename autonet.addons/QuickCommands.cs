@@ -221,6 +221,7 @@ namespace autonet {
                 tr.Commit();
             }
         }
+
         [CommandMethod("Quicky", "sss", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
          public static void AAAnyToPolyCommand() {
             using (var tr = new QuickTransaction()) {
@@ -228,6 +229,7 @@ namespace autonet {
                 tr.Commit();
             }
         }
+
         [CommandMethod("Quicky", "2p", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void AnyToPolyCommand() {
             using (var tr = new QuickTransaction()) {
