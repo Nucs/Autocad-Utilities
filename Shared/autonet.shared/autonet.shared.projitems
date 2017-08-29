@@ -9,6 +9,7 @@
     <Import_RootNamespace>autonet</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\CommandPrintMute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\cmd.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\CreateTestCuix.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\CollectionExtensions.cs" />

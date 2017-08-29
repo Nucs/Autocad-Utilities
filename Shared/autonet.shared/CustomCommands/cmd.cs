@@ -67,7 +67,7 @@ namespace YourCAD.Utilities {
                     ++cnt;
                 }
                 if (cnt > 0) {
-                    stat = acedCmd2013( buffer.UnmanagedObject );
+                    stat = acedCmd2013(buffer.UnmanagedObject);
                 }
             }
             return stat;

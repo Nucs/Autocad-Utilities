@@ -9,10 +9,6 @@
     <Import_RootNamespace>autonet.addons</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Resources\" />
-    <Folder Include="$(MSBuildThisFileDirectory)Settings\" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Application.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CommandPrintMute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)QuickCommands.cs" />
