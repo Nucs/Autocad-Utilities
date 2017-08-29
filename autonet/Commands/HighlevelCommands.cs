@@ -508,6 +508,7 @@ namespace autonet.Forms {
                 tr.Dispose();
             }
         }
+
         [CommandMethod("LISTATT", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void ListAttributes() {
             Editor ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;

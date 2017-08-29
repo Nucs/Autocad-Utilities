@@ -88,6 +88,9 @@
       <HintPath>..\packages\AutoCAD.NET.22.0.0\lib\net46\AcWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="AdamsLair.WinForms, Version=1.1.12.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AdamsLair.WinForms.1.1.12\lib\net45\AdamsLair.WinForms.dll</HintPath>
+    </Reference>
     <Reference Include="AdUIMgd, Version=22.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AutoCAD.NET.22.0.0\lib\net46\AdUIMgd.dll</HintPath>
     </Reference>
@@ -121,13 +124,16 @@
     <Reference Include="Microsoft.WindowsAPICodePack.Shell, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAPICodePack-Shell.1.1.1\lib\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
     </Reference>
+    <Reference Include="PopupControl, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AdamsLair.WinForms.PopupControl.1.0.0.0\lib\net40\PopupControl.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\net461\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -182,6 +188,7 @@
     <Compile Include="XrefLoader.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -203,16 +210,6 @@
     <EmbeddedResource Include="Forms\QQConfigForm.resx">
       <DependentUpon>QQConfigForm.cs</DependentUpon>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\libraries\winforms-master\WinForms\AdamsLair.WinForms.csproj">
-      <Project>{44e2fd11-c687-41ed-b72f-1a4c92479edc}</Project>
-      <Name>AdamsLair.WinForms</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libraries\winforms.popupcontrol-master\PopupControl\PopupControl.csproj">
-      <Project>{c7ac0623-d870-42df-acfc-c75cbd76a959}</Project>
-      <Name>PopupControl</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\if_Close_1493281.png" />
@@ -250,8 +247,8 @@
   <ItemGroup>
     <None Include="Resources\if_icon-32-clipboard-edit_315231.png" />
   </ItemGroup>
-  <Import Project="..\Newtonsoft.Json\Newtonsoft.Json.projitems" Label="Shared" />
-  <Import Project="..\autonet.shared\autonet.shared.projitems" Label="Shared" />
-  <Import Project="..\autonet.addons\autonet.addons.projitems" Label="Shared" />
+  <Import Project="..\Shared\autonet.addons\autonet.addons.projitems" Label="Shared" />
+  <Import Project="..\Shared\autonet.shared\autonet.shared.projitems" Label="Shared" />
+  <Import Project="..\External Libraries\Newtonsoft.Json\Newtonsoft.Json.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

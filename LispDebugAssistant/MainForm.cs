@@ -121,7 +121,8 @@ namespace LispDebugAssistant {
                             var l = lstWatching.Items.Cast<object>().Select(o => o.ToString()).OrderBy(s => s).ToArray();
                             lstWatching.Items.Clear();
                             lstWatching.Items.AddRange(l);
-                        } else {
+                        }
+                        else {
                             var l = lstWatching.Items.Cast<object>().Select(o => o.ToString()).OrderByDescending(s => s).ToArray();
                             lstWatching.Items.Clear();
                             lstWatching.Items.AddRange(l);
@@ -132,29 +133,50 @@ namespace LispDebugAssistant {
         }
 
         private bool __sort_switch = false;
+        private bool forceclose;
 
         private void MainForm_Load(object sender, EventArgs e) {
             GUI.SetStatus("Initial loading...");
             if (MainForm.Config.AutoStart) {
                 OnOffSwitch(true);
             }
+            else {
+                GUI.StateTurnOff();
+            }
             TIcon = new TrayIcon(Icon);
-            TIcon.AddMenuItem("Show/Hide", () => {
-                if (this.Visible)
-                    this.Hide();
-                else {
-                    this.Show();
-                }
+            TIcon.AddMenuItem("Show/Hide", ToggleShowHide);
+            TIcon.AddMenuSeparator();
+            TIcon.AddMenuItem("Close", () => {
+                this.forceclose = true;
+                this.Close();
             });
             TIcon.Show();
             TIcon.ShowBalloonTipFor(5000, "Lisp Debug Assistant", "Letting you know im running!", ToolTipIcon.Info);
-
+            TIcon.DoubleClick += (o, args) => {
+                ToggleShowHide();
+            };
+            
             foreach (var file in Config.Files ?? new string[0]) {
                 Manager.Watch(file);
             }
 
             if (Config.LoadAllOnStartup)
                 ReloadAll();
+        }
+
+        private void ToggleShowHide() {
+            if (this.InvokeRequired) {
+                Invoke(new MethodInvoker(ToggleShowHide));
+                return;
+            }
+            if (this.Visible)
+                this.Hide();
+            else {
+                this.Show();
+                if (WindowState == FormWindowState.Minimized) {
+                    WindowState = FormWindowState.Normal;
+                }
+            }
         }
 
         private void btnOnOff_Click(object sender, EventArgs e) {
@@ -184,7 +206,8 @@ namespace LispDebugAssistant {
                     Off();
                 else if (IsMonitoring) {
                     Off();
-                } else {
+                }
+                else {
                     On();
                 }
             }
@@ -252,6 +275,13 @@ namespace LispDebugAssistant {
         private void MainForm_Shown(object sender, EventArgs e) {
             if (Config.StartMinimized)
                 this.Hide();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
+            if (forceclose)
+                return;
+            e.Cancel = true;
+            ToggleShowHide();
         }
     }
 }

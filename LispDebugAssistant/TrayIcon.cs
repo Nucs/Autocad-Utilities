@@ -11,19 +11,76 @@ namespace nucs.WinForms.Tray {
         private Icon _icon;
         private bool _showingDefaultBalloonTip;
 
-        public TrayIcon(Icon icon) {
+        #region Events
+
+        public event EventHandler BalloonTipClicked {
+            add => NotifyIcon.BalloonTipClicked += value;
+            remove => NotifyIcon.BalloonTipClicked -= value;
+        }
+
+        public event EventHandler BalloonTipClosed {
+            add => NotifyIcon.BalloonTipClosed += value;
+            remove => NotifyIcon.BalloonTipClosed -= value;
+        }
+
+        public event EventHandler BalloonTipShown {
+            add => NotifyIcon.BalloonTipShown += value;
+            remove => NotifyIcon.BalloonTipShown -= value;
+        }
+
+        public event EventHandler Click {
+            add => NotifyIcon.Click += value;
+            remove => NotifyIcon.Click -= value;
+        }
+
+        public event EventHandler DoubleClick {
+            add => NotifyIcon.DoubleClick += value;
+            remove => NotifyIcon.DoubleClick -= value;
+        }
+
+        public event MouseEventHandler MouseClick {
+            add => NotifyIcon.MouseClick += value;
+            remove => NotifyIcon.MouseClick -= value;
+        }
+
+        public event MouseEventHandler MouseDoubleClick {
+            add => NotifyIcon.MouseDoubleClick += value;
+            remove => NotifyIcon.MouseDoubleClick -= value;
+        }
+
+        public event MouseEventHandler MouseDown {
+            add => NotifyIcon.MouseDown += value;
+            remove => NotifyIcon.MouseDown -= value;
+        }
+
+        public event MouseEventHandler MouseMove {
+            add => NotifyIcon.MouseMove += value;
+            remove => NotifyIcon.MouseMove -= value;
+        }
+
+        public event MouseEventHandler MouseUp {
+            add => NotifyIcon.MouseUp += value;
+            remove => NotifyIcon.MouseUp -= value;
+        }
+        #endregion
+
+        private TrayIcon() {
+            
+        }
+
+        public TrayIcon(Icon icon) : this() {
             Init(icon);
         }
 
-        public TrayIcon(Stream iconImageStream) {
+        public TrayIcon(Stream iconImageStream) : this(){
             InitWithStream(iconImageStream);
         }
 
-        public TrayIcon(Bitmap iconBitmap) {
+        public TrayIcon(Bitmap iconBitmap) : this() {
             Init(Icon.FromHandle(iconBitmap.GetHicon()));
         }
 
-        public TrayIcon(string pathToIcon) {
+        public TrayIcon(string pathToIcon): this() {
             using (var fileStream = new FileStream(pathToIcon, FileMode.Open, FileAccess.Read))
                 InitWithStream(fileStream);
         }
@@ -32,7 +89,7 @@ namespace nucs.WinForms.Tray {
         public int DefaultBalloonTipTimeout { get; set; }
 
         public Icon Icon {
-            get { return _icon; }
+            get => _icon;
             set {
                 _icon = value;
                 NotifyIcon.Icon = _icon;
