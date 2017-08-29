@@ -17,8 +17,6 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "autonet.addons", "Shared\au
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{1E0BE153-99E5-4EE3-A62E-72262532DC98}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "AdamLair.WinForms", "External Libraries\AdamLair.WinForms\AdamLair.WinForms.shproj", "{44E2FD11-C687-41ED-B72F-1A4C92479EDC}"
-EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		External Libraries\Newtonsoft.Json\Newtonsoft.Json.projitems*{1f2e333e-32ea-4fff-95db-f1ffc48f7b41}*SharedItemsImports = 4
@@ -26,7 +24,6 @@ Global
 		External Libraries\Newtonsoft.Json\Newtonsoft.Json.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
 		Shared\autonet.addons\autonet.addons.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
 		Shared\autonet.shared\autonet.shared.projitems*{25d3f6f7-e0d5-4f67-a50d-caf413525814}*SharedItemsImports = 4
-		External Libraries\AdamLair.WinForms\AdamLair.WinForms.projitems*{44e2fd11-c687-41ed-b72f-1a4c92479edc}*SharedItemsImports = 13
 		Shared\autonet.addons\autonet.addons.projitems*{4f5d0292-419f-4603-b490-baf7ef257612}*SharedItemsImports = 13
 		External Libraries\Newtonsoft.Json\Newtonsoft.Json.projitems*{7f70dba0-49f6-4585-8af4-a89a0c026c7f}*SharedItemsImports = 13
 		Shared\autonet.shared\autonet.shared.projitems*{c505a428-7e71-489c-8bf3-e17dabf063ce}*SharedItemsImports = 13
