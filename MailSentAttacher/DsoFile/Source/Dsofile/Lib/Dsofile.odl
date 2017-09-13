@@ -1,0 +1,289 @@
+/***************************************************************************
+ * DSOFILE.ODL  - DSO File OLE Document Properties Server
+ *
+ *  Copyright (c)1999-2001 Microsoft Corporation, All Rights Reserved
+ *  Microsoft Product Support Services, Developer Support
+ *
+ *  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+ *  EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+ *  WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ ***************************************************************************/
+/***************************************************************************
+ *
+ *  IMPORTANT: You should not attempt to modify this library unless you are
+ *  sure you do not break binary compatibility, or you change all the GUIDs
+ *  listed in version.h so as to build a completely new control.
+ *
+ ***************************************************************************/
+#include "..\version.h"
+
+/* Standard IDispatch Common DISPIDs */
+#define	DISPID_VALUE		(  0 )
+#define	DISPID_UNKNOWN		( -1 )
+#define	DISPID_PROPERTYPUT	( -3 )
+#define	DISPID_NEWENUM		( -4 )
+
+/* DSOFILE TypeLib */
+[
+  uuid(DSOFILE_TYPELIB), helpstring(DSOFILE_FULLNAME),
+  version(DSOFILE_VERSION), lcid(0x0000)
+]
+library DSOFile
+{
+    importlib("STDOLE2.TLB");
+
+    typedef enum dsoFilePropertyType
+    {
+		dsoPropertyTypeUnknown = 0,
+        dsoPropertyTypeString = 1,
+        dsoPropertyTypeLong,
+        dsoPropertyTypeDouble,
+        dsoPropertyTypeBool,
+        dsoPropertyTypeDate
+    } dsoFilePropertyType;
+
+   typedef enum dsoFileOpenOptions
+   {
+	   dsoOptionDefault = 0,
+       dsoOptionOnlyOpenOLEFiles = 1,
+       dsoOptionOpenReadOnlyIfNoWriteAccess = 2,
+       dsoOptionDontAutoCreate = 4,
+       dsoOptionUseMBCStringsForNewSets = 8
+   } dsoFileOpenOptions;
+
+   [
+     uuid(DSOFILE_IID_CUSTPROP), dual, nonextensible, oleautomation
+   ]
+   interface CustomProperty : IDispatch
+   {
+
+       [id(0x00040001), propget, helpstring("Returns the name of the property.")]
+       HRESULT Name([out, retval] BSTR* pbstrName);
+
+       [id(0x00040002), propget, helpstring("Returns the data type of the property.")]
+       HRESULT Type([out, retval] dsoFilePropertyType* dsoType);
+
+       [id(DISPID_VALUE), propget, helpstring("Returns\sets the value for the property.")]
+       HRESULT Value([out, retval] VARIANT* pvValue);
+
+       [id(DISPID_VALUE), propput]
+       HRESULT Value([in] VARIANT* pvValue);
+
+       [id(0x00040003), helpstring("Removes the property, deleting it from the document.")]
+       HRESULT Remove();
+
+    };
+
+    [
+      uuid(DSOFILE_IID_CUSTPROPS), dual, nonextensible, oleautomation
+    ]
+    interface CustomProperties : IDispatch
+    {
+        [id(0x00030001), propget, helpstring("Returns the number of custom properties in the collection.")]
+        HRESULT Count([out, retval] long* lCount);
+
+        [id(0x00030002), helpstring("Adds a new CustomProperty to the document.")]
+        HRESULT Add([in] BSTR sPropName, [in] VARIANT* Value, [out, retval] CustomProperty** ppDocProperty);
+
+        [id(DISPID_VALUE), propget, helpstring("Returns a CustomProperty using the supplied Name or Index.")]
+        HRESULT Item([in] VARIANT Index, [out, retval] CustomProperty** ppDocProperty);
+
+        [id(DISPID_NEWENUM), restricted, propget]
+        HRESULT _NewEnum([out, retval] IUnknown** ppunk);
+
+    };
+
+    [
+      uuid(DSOFILE_IID_SUMPROPS), dual, nonextensible, oleautomation
+    ]
+    interface SummaryProperties : IDispatch
+    {
+        [id(0x00020001), propget, helpstring("Returns\sets the document's title.")]
+        HRESULT Title([out, retval] BSTR* pbstrTitle);
+
+        [id(0x00020001), propput]
+        HRESULT Title([in] BSTR bstrTitle);
+
+        [id(0x00020002), propget, helpstring("Returns\sets the document's subject.")]
+        HRESULT Subject([out, retval] BSTR* pbstrSubject);
+
+        [id(0x00020002), propput]
+        HRESULT Subject([in] BSTR bstrSubject);
+
+        [id(0x00020003), propget, helpstring("Returns the name of the document's author.")]
+        HRESULT Author([out, retval] BSTR* pbstrAuthor);
+
+        [id(0x00020003), propput]
+        HRESULT Author([in] BSTR bstrAuthor);
+
+        [id(0x00020004), propget, helpstring("Returns\sets the document keywords.")]
+        HRESULT Keywords([out, retval] BSTR* pbstrKeywords);
+
+        [id(0x00020004), propput]
+        HRESULT Keywords([in] BSTR bstrKeywords);
+
+        [id(0x00020005), propget, helpstring("Returns\sets comments for the document.")]
+        HRESULT Comments([out, retval] BSTR* pbstrComments);
+
+        [id(0x00020005), propput]
+        HRESULT Comments([in] BSTR bstrComments);
+
+        [id(0x00020006), propget, helpstring("Returns the name of the template used to create the document.")]
+        HRESULT Template([out, retval] BSTR* pbstrTemplate);
+
+        [id(0x00020007), propget, helpstring("Returns\sets the name of the last person to edit and save the file.")]
+        HRESULT LastSavedBy([out, retval] BSTR* pbstrLastSavedBy);
+
+        [id(0x00020007), propput]
+        HRESULT LastSavedBy([in] BSTR bstrLastSavedBy);
+
+        [id(0x00020008), propget, helpstring("Returns the revision number.")]
+        HRESULT RevisionNumber([out, retval] BSTR* pbstrRevisionNumber);
+
+        [id(0x00020009), propget, helpstring("Returns the total number of minutes the document was edited.")]
+        HRESULT TotalEditTime([out, retval] long* plTotalEditTime);
+
+        [id(0x0002000A), propget, helpstring("Returns the date the document was last printed.")]
+        HRESULT DateLastPrinted([out, retval] VARIANT* pdtDateLastPrinted);
+
+        [id(0x0002000B), propget, helpstring("Returns the date the document was created.")]
+        HRESULT DateCreated([out, retval] VARIANT* pdtDateCreated);
+
+        [id(0x0002000C), propget, helpstring("Returns the date the document was last saved.")]
+        HRESULT DateLastSaved([out, retval] VARIANT* pdtDateLastSaved);
+
+        [id(0x0002000D), propget, helpstring("Returns the number of pages the document contains.")]
+        HRESULT PageCount([out, retval] long* plPageCount);
+
+        [id(0x0002000E), propget, helpstring("Returns the number of words in the document.")]
+        HRESULT WordCount([out, retval] long* plWordCount);
+
+        [id(0x0002000F), propget, helpstring("Returns the number of characters in the document.")]
+        HRESULT CharacterCount([out, retval] long* plCharacterCount);
+
+        [id(0x00020010), propget, helpstring("Returns the thumbnail image for the document.")]
+        HRESULT Thumbnail([out, retval] VARIANT* pvtThumbnail);
+
+        [id(0x00020011), propget, helpstring("Returns the name of the application that made the file.")]
+        HRESULT ApplicationName([out, retval] BSTR* pbstrAppName);
+
+        [id(0x00020012), hidden, propget, helpstring("Returns the read-only recommendation setting (not always reliable).")]
+        HRESULT DocumentSecurity([out, retval] long* plDocSecurity);
+
+        [id(0x00020013), propget, helpstring("Returns\sets the document's category.")]
+        HRESULT Category([out, retval] BSTR* pbstrCategory);
+
+        [id(0x00020013), propput]
+        HRESULT Category([in] BSTR bstrCategory);
+
+        [id(0x00020014), propget, helpstring("Returns the format type name for a presentation.")]
+        HRESULT PresentationFormat([out, retval] BSTR* pbstrPresFormat);
+
+        [id(0x00020015), propget, helpstring("Returns the size of the document in bytes.")]
+        HRESULT ByteCount([out, retval] long* plByteCount);
+
+        [id(0x00020016), propget, helpstring("Returns the number of lines in the document.")]
+        HRESULT LineCount([out, retval] long* plLineCount);
+
+        [id(0x00020017), propget, helpstring("Returns the number of paragraphs in the document.")]
+        HRESULT ParagraphCount([out, retval] long* plParagraphCount);
+
+        [id(0x00020018), propget, helpstring("Returns the number of slides in the presentation (PowerPoint).")]
+        HRESULT SlideCount([out, retval] long* plSlideCount);
+
+        [id(0x00020019), propget, helpstring("Returns the number of notes in a presentation.")]
+        HRESULT NoteCount([out, retval] long* plPresNotes);
+
+        [id(0x0002001A), propget, helpstring("Returns the number of hidden slides in a presentation.")]
+        HRESULT HiddenSlideCount([out, retval] long* plHiddenSlides);
+
+        [id(0x0002001B), propget, helpstring("Returns the number of multimedia clips in a presentation.")]
+        HRESULT MultimediaClipCount([out, retval] long* plMultimediaClips);
+
+        [id(0x0002001C), propget, helpstring("Returns\sets an associated manager.")]
+        HRESULT Manager([out, retval] BSTR* pbstrManager);
+
+        [id(0x0002001C), propput]
+        HRESULT Manager([in] BSTR bstrManager);
+
+        [id(0x0002001D), propget, helpstring("Returns\sets the name of the company.")]
+        HRESULT Company([out, retval] BSTR* pbstrCompany);
+
+        [id(0x0002001D), propput]
+        HRESULT Company([in] BSTR bstrCompany);
+
+        [id(0x0002001E), propget, helpstring("Returns the number of characters (including spaces) in the document.")]
+        HRESULT CharacterCountWithSpaces([out, retval] long* plCharCountWithSpaces);
+
+        [id(0x0002001F), propget, helpstring("Indicates if file is a shared document/workbook.")]
+        HRESULT SharedDocument([out, retval] boolean* pbSharedDocument);
+
+        [id(0x00020020), propget, helpstring("Returns the version of the document.")]
+        HRESULT Version([out, retval] BSTR* pbstrVersion);
+
+        [id(0x00020021), hidden, propget, helpstring("Returns the digital signature for the signed document.")]
+        HRESULT DigitalSignature([out, retval] VARIANT* pvtDigSig);
+    };
+
+    [
+      uuid(DSOFILE_IID_OLEFILE), hidden, dual, nonextensible, oleautomation
+    ]
+    interface _OleDocumentProperties : IDispatch
+    {
+        [id(0x00010001), helpstring("Open the file to read the document properties.")]
+        HRESULT Open([in] BSTR sFileName, [in, optional, defaultvalue(0)] boolean ReadOnly, [in, optional, defaultvalue(dsoOptionDefault)] dsoFileOpenOptions Options);
+
+        [id(0x00010002), helpstring("Close the file.")]
+        HRESULT Close([in, optional, defaultvalue(0)] boolean SaveBeforeClose);
+
+        [id(0x00010003), propget, helpstring("Returns True if document was opened read-only.")]
+		HRESULT IsReadOnly([out, retval] boolean* pbReadOnly);
+
+        [id(0x00010004), propget, helpstring("Returns True if properties have been modified.")]
+		HRESULT IsDirty([out, retval] boolean* pbDirty);
+
+        [id(0x00010005), helpstring("Save the changes made to the file.")]
+        HRESULT Save();
+
+        [id(0x00010006), propget, helpstring("Returns the SummaryProperties collection.")]
+		HRESULT SummaryProperties([out, retval] SummaryProperties** ppSummaryProperties);
+
+        [id(0x00010007), propget, helpstring("Returns the CustomProperties collection.")]
+		HRESULT CustomProperties([out, retval] CustomProperties** ppCustomProperties);
+
+        [id(0x00010008), propget, helpstring("Returns a StdPicture object containing the icon associated with the document.")]
+		HRESULT Icon([out, retval] IDispatch** ppicIcon);
+
+        [id(DISPID_VALUE), propget, helpstring("Returns the file name for the document.")]
+		HRESULT Name([out, retval] BSTR* pbstrName);
+
+        [id(0x00010009), propget, helpstring("Returns the path to the document.")]
+		HRESULT Path([out, retval] BSTR* pbstrPath);
+
+        [id(0x0001000A), propget, helpstring("Returns True if file is an OLE document.")]
+        HRESULT IsOleFile([out, retval] boolean* pIsOleFile);
+
+        [id(0x0001000B), propget, helpstring("Returns the CLSID of the application that created the document.")]
+		HRESULT CLSID([out, retval] BSTR* pbstrCLSID);
+
+        [id(0x0001000C), propget, helpstring("Returns the ProgID of the parent application.")]
+		HRESULT ProgID([out, retval] BSTR* pbstrProgID);
+
+        [id(0x0001000D), propget, helpstring("Returns the clipboard format for the OLE document.")]
+        HRESULT OleDocumentFormat([out, retval] BSTR* pbstrFormat);
+
+        [id(0x0001000E), propget, helpstring("Returns the user type name for the OLE document.")]
+        HRESULT OleDocumentType([out, retval] BSTR* pbstrType);
+    };
+
+    [
+      uuid(DSOFILE_CLSID_OLEFILE), helpstring(DSOFILE_SHORTNAME)
+    ]
+    coclass OleDocumentProperties
+    {
+        [default] interface _OleDocumentProperties;
+    };
+
+};
+

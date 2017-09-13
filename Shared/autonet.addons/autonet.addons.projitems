@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>4f5d0292-419f-4603-b490-baf7ef257612</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>autonet.addons</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Application.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CommandPrintMute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)QuickCommands.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)lsp\C2P.1.lsp" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)lsp\C2P.2.lsp" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)lsp\E2P.1.LSP" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)lsp\E2P.2.LSP" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomPropertyExtension", "CustomPropertyExtension\CustomPropertyExtension.csproj", "{056308D9-D82C-4AEE-9DF2-D11DFEDE0172}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{056308D9-D82C-4AEE-9DF2-D11DFEDE0172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{056308D9-D82C-4AEE-9DF2-D11DFEDE0172}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{056308D9-D82C-4AEE-9DF2-D11DFEDE0172}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{056308D9-D82C-4AEE-9DF2-D11DFEDE0172}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>c505a428-7e71-489c-8bf3-e17dabf063ce</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>autonet</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\CommandPrintMute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\cmd.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CustomCommands\CreateTestCuix.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\CollectionExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ControlExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ConvertHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ExceptBy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\IntersectBy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\MoreEnumerable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ObjectExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\PathExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\SelectionSetExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\UtilityExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\XEqualityComparer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\FileDialogs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\SafeDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LspLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Paths.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Quick.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)QuickTransaction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\ISaveable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\JsonConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\QQSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SettingsBag.cs" />
+  </ItemGroup>
+</Project>

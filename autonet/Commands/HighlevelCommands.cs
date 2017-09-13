@@ -472,7 +472,7 @@ namespace autonet.Forms {
                 };
                 SelectionFilter filter = new SelectionFilter(filList);
                 PromptSelectionOptions opts = new PromptSelectionOptions();
-                opts.MessageForAdding = "Select block references: ";
+                opts.MessageForAdding = "Select blocks to filter: ";
                 SelectionSet res = Quick.GetImpliedOrSelect(opts, filter);
 
                 // Do nothing if selection is unsuccessful
@@ -480,14 +480,35 @@ namespace autonet.Forms {
 
                 SelectionSet selSet = res;
                 ObjectId[] idArray = selSet.GetObjectIds();
-                tr.Commit();
-                Quick.SetSelected(idArray);
+                List<ObjectId> aa = new List<ObjectId>();
+
+                foreach (ObjectId blkId in idArray)
+                {
+                    BlockReference blkRef = (BlockReference)tr.GetObject(blkId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
+                    if (WildcardMatch(btr.Name, oldblock, false))
+                    {
+                        aa.Add(blkId);
+                    }
+                    btr.Dispose();
+
+                    /*AttributeCollection attCol = blkRef.AttributeCollection;
+                    foreach (ObjectId attId in attCol)
+                    {
+                        AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForRead);
+
+                        string str = ("\n  Attribute Tag: " + attRef.Tag + "\n    Attribute String: " + attRef.TextString);
+                        ed.WriteMessage(str);
+                    }*/
+                }
+                Quick.SetSelected(aa.ToArray());
             } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
                 ed.WriteMessage(("Exception: " + ex.Message));
             } finally {
                 tr.Dispose();
             }
         }
+
         [CommandMethod("LISTATT", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void ListAttributes() {
             Editor ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
@@ -515,7 +536,7 @@ namespace autonet.Forms {
                 };
                 SelectionFilter filter = new SelectionFilter(filList);
                 PromptSelectionOptions opts = new PromptSelectionOptions();
-                opts.MessageForAdding = "Select block references: ";
+                opts.MessageForAdding = "Select blocks to filter: ";
                 SelectionSet res = Quick.GetImpliedOrSelect(opts, filter);
 
                 // Do nothing if selection is unsuccessful
@@ -523,10 +544,14 @@ namespace autonet.Forms {
 
                 SelectionSet selSet = res;
                 ObjectId[] idArray = selSet.GetObjectIds();
+                List<ObjectId> aa = new List<ObjectId>();
+
                 foreach (ObjectId blkId in idArray) {
                     BlockReference blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
-                    if (WildcardMatch(btr.Name, oldblock, false)) {
+                    if (WildcardMatch(btr.Name, oldblock, false))
+                    {
+                        aa.Add(blkId);
                         ed.WriteMessage("\nBlock: " + btr.Name);
                     }
                     btr.Dispose();
@@ -540,8 +565,7 @@ namespace autonet.Forms {
                         ed.WriteMessage(str);
                     }*/
                 }
-                tr.Commit();
-                Quick.SetSelected(idArray);
+                Quick.SetSelected(aa.ToArray());
             } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
                 ed.WriteMessage(("Exception: " + ex.Message));
             } finally {

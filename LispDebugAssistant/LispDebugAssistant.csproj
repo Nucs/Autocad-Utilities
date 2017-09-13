@@ -93,6 +93,9 @@
       <HintPath>..\packages\AutoCAD.NET.22.0.0\lib\net46\AcWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="AdamsLair.WinForms, Version=1.1.12.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AdamsLair.WinForms.1.1.12\lib\net45\AdamsLair.WinForms.dll</HintPath>
+    </Reference>
     <Reference Include="AdUIMgd, Version=22.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AutoCAD.NET.22.0.0\lib\net46\AdUIMgd.dll</HintPath>
     </Reference>
@@ -170,8 +173,7 @@
   <ItemGroup>
     <Content Include="logo.ico" />
   </ItemGroup>
-  <Import Project="..\autonet.shared\autonet.shared.projitems" Label="Shared" />
-  <Import Project="..\Newtonsoft.Json\Newtonsoft.Json.projitems" Label="Shared" />
-  <Import Project="..\autonet.addons\autonet.addons.projitems" Label="Shared" />
+  <Import Project="..\Shared\autonet.shared\autonet.shared.projitems" Label="Shared" />
+  <Import Project="..\External Libraries\Newtonsoft.Json\Newtonsoft.Json.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
