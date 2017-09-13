@@ -70,6 +70,7 @@ namespace LispDebugAssistant {
                     ((List<string>) References).Clear();
                     ((List<string>) References).AddRange(files);
                 }
+
             } catch (Exception e) {
                 Manager?.OnError(new ThrowlessException("Failed Reading and processing LspFile: " + this.FullPath, Environment.StackTrace, e), @when ?? DateTime.Now);
             }

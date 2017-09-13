@@ -10,7 +10,6 @@ namespace LispDebugAssistant {
             this.StackTrace = stackTrace;
         }
 
-
         public override string StackTrace { get; }
     }
 }
