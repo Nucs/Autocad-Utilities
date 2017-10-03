@@ -303,7 +303,7 @@ namespace autonet.Forms {
 
 
         //[CommandMethod("mrotate", CommandFlags.Session | CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
-        public static void MagicRotateCommand() {
+        /*public static void MagicRotateCommand() {
             double DegreeToRadian(double angle) => Math.PI * angle / 180.0;
 
             double RadianToDegree(double angle) => angle * (180.0 / Math.PI);
@@ -347,7 +347,7 @@ namespace autonet.Forms {
             } catch (System.Exception ex) {
                 ed.WriteMessage(ex.Message + "\n" + ex.StackTrace);
             }
-        }
+        }*/
 
         [CommandMethod("mreplace", CommandFlags.Session | CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void MagicReplaceCommand() {
@@ -379,7 +379,7 @@ namespace autonet.Forms {
                         if (objs.Any(o => (o as BlockReference)?.Position.Z > 0 == true)) {
                             flattern = Quick.AskQuestion("Should flattern blocks with Z value", true) ?? false;
                         }
-
+                        var os = new List<ObjectId>();
                         foreach (Entity ent in objs) {
                             BlockReference oldblk = ent as BlockReference;
                             if (oldblk == null) {
@@ -401,6 +401,7 @@ namespace autonet.Forms {
                             oldblk.UpgradeOpen();
                             oldblk.Erase();
                             oldblk.Dispose();
+                            os.Add(newblk.ObjectId);
                         }
 
                         Autodesk.AutoCAD.ApplicationServices.Core.Application.SetSystemVariable("nomutt", 1);
@@ -409,6 +410,7 @@ namespace autonet.Forms {
                         if (notparsed > 0)
                             ed.WriteMessage($"{notparsed} are not blocks and were not replaced.\n");
                         ed.WriteMessage($"{toreplace.Count} were replaced to block {masterblock.Name} successfully.\n");
+                        Quick.SetSelected(os.ToArray());
                     }
                 }
             } catch (System.Exception ex) {
@@ -420,10 +422,6 @@ namespace autonet.Forms {
 
         [CommandMethod("mrotate", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void MRotateCommand() {
-            double DegreeToRadian(double angle) {
-                return Math.PI * angle / 180.0d;
-            }
-
             using (QuickTransaction tr = new QuickTransaction()) {
                 // objects initializing
                 var nomutt = Convert.ToInt32(Autodesk.AutoCAD.ApplicationServices.Core.Application.GetSystemVariable("nomutt"));
@@ -453,11 +451,101 @@ namespace autonet.Forms {
                     // Add the new object to the block table record and the transaction
                     // Save the new objects to the database
                     tr.Commit();
+                    Quick.SetSelected(_sel);
                 } catch (System.Exception ex) {
                     Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
                 } finally {
                     Autodesk.AutoCAD.ApplicationServices.Core.Application.SetSystemVariable("nomutt", nomutt);
                 }
+            }
+        }
+
+        [CommandMethod("mtolines", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void AlignBlocks() {
+            try {
+                var options = new PromptEntityOptions("\nSelect polyline: ");
+                options.SetRejectMessage("Objet non valide.");
+                options.AddAllowedClass(typeof(Polyline), true);
+                var result = Quick.Editor.GetEntity(options);
+                if (result.Status != PromptStatus.OK)
+                    return;
+                var lineId = result.ObjectId;
+
+                var sel = Quick.GetImpliedOrSelect();
+                if (result.Status != PromptStatus.OK)
+                    return;
+
+                Database db = lineId.Database;
+                foreach (var blockId in sel.GetObjectIds()) {
+                    using (Transaction trans = db.TransactionManager.StartTransaction()) {
+                        try {
+                            Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
+                            BlockReference blockRef = trans.GetObject(blockId, OpenMode.ForWrite) as BlockReference;
+
+                            // better use the center point, instead min/max
+                            Point3d pointOverLine = line.GetClosestPointTo(blockRef.Position, false);
+                            blockRef.Position = pointOverLine; // move
+
+                            // assuming a well behaved 2D block aligned with XY
+                            Vector3d lineDirection = line.GetFirstDerivative(pointOverLine);
+                            double angleToRotate = Vector3d.XAxis.GetAngleTo(lineDirection, Vector3d.ZAxis);
+                            blockRef.Rotation = angleToRotate;
+
+                            trans.Commit();
+                        } catch (System.Exception ex) {
+                            Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        }
+                    }
+                }
+                Quick.SetSelected(sel);
+            } catch (System.Exception ex) {
+                Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+
+        [CommandMethod("mtoline", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void AlignBlockCommand() {
+            var options = new PromptEntityOptions("\nSelect polyline: ");
+            options.SetRejectMessage("Objet non valide.");
+            options.AddAllowedClass(typeof(Polyline), true);
+            var result = Quick.Editor.GetEntity(options);
+            if (result.Status != PromptStatus.OK)
+                return;
+            var plineId = result.ObjectId;
+
+            options.Message = "\nSelect block: ";
+            options.RemoveAllowedClass(typeof(Polyline));
+            options.AddAllowedClass(typeof(BlockReference), true);
+            result = Quick.Editor.GetEntity(options);
+            if (result.Status != PromptStatus.OK)
+                return;
+            var blockId = result.ObjectId;
+
+            Align(plineId, blockId);
+        }
+
+        private static void Align(ObjectId lineId, ObjectId blockId) {
+            if (lineId.ObjectClass != RXClass.GetClass(typeof(Polyline)))
+                throw new Autodesk.AutoCAD.Runtime.Exception(Autodesk.AutoCAD.Runtime.ErrorStatus.InvalidInput, "1st parameter must be a Polyline");
+            if (blockId.ObjectClass != RXClass.GetClass(typeof(BlockReference)))
+                throw new Autodesk.AutoCAD.Runtime.Exception(Autodesk.AutoCAD.Runtime.ErrorStatus.InvalidInput, "2nd parameter must be a block");
+
+            Database db = lineId.Database;
+            using (Transaction trans = db.TransactionManager.StartTransaction()) {
+                Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
+                BlockReference blockRef = trans.GetObject(blockId, OpenMode.ForWrite) as BlockReference;
+
+                // better use the center point, instead min/max
+                Point3d pointOverLine = line.GetClosestPointTo(blockRef.Position, false);
+                blockRef.Position = pointOverLine; // move
+
+                // assuming a well behaved 2D block aligned with XY
+                Vector3d lineDirection = line.GetFirstDerivative(pointOverLine);
+                double angleToRotate = Vector3d.XAxis.GetAngleTo(lineDirection, Vector3d.ZAxis);
+                blockRef.Rotation = angleToRotate;
+
+                trans.Commit();
             }
         }
 
