@@ -302,11 +302,10 @@ namespace autonet.Forms {
                 */
 
 
-        
-
         //[CommandMethod("mrotate", CommandFlags.Session | CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void MagicRotateCommand() {
             double DegreeToRadian(double angle) => Math.PI * angle / 180.0;
+
             double RadianToDegree(double angle) => angle * (180.0 / Math.PI);
             // objects initializing
             var nomutt = Convert.ToInt32(Autodesk.AutoCAD.ApplicationServices.Core.Application.GetSystemVariable("nomutt"));
@@ -329,12 +328,13 @@ namespace autonet.Forms {
                         var degrees = howmuch.Value > 6.28319 ? howmuch.Value : RadianToDegree(howmuch.Value);
                         foreach (Entity ent in objs) {
                             BlockReference block = ent as BlockReference;
-                            if (block == null) { //not block..
+                            if (block == null) {
+                                //not block..
                                 notparsed++;
                                 continue;
                             }
                             var a = block.Rotation;
-                            var e = DegreeToRadian((RadianToDegree(block.Rotation) + degrees)%360);
+                            var e = DegreeToRadian((RadianToDegree(block.Rotation) + degrees) % 360);
                             block.Rotation = a;
                         }
 
@@ -346,8 +346,9 @@ namespace autonet.Forms {
                 }
             } catch (System.Exception ex) {
                 ed.WriteMessage(ex.Message + "\n" + ex.StackTrace);
-            } 
+            }
         }
+
         [CommandMethod("mreplace", CommandFlags.Session | CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void MagicReplaceCommand() {
             // objects initializing
@@ -367,7 +368,7 @@ namespace autonet.Forms {
                         if (totype == null)
                             return;
 
-                        var masterblock = (BlockTableRecord)tr.GetObject(((BlockReference)tr.GetObject(totype ?? ObjectId.Null, OpenMode.ForWrite)).BlockTableRecord, OpenMode.ForRead);
+                        var masterblock = (BlockTableRecord) tr.GetObject(((BlockReference) tr.GetObject(totype ?? ObjectId.Null, OpenMode.ForWrite)).BlockTableRecord, OpenMode.ForRead);
                         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
                         var @new = bt[masterblock.Name];
 
@@ -381,12 +382,13 @@ namespace autonet.Forms {
 
                         foreach (Entity ent in objs) {
                             BlockReference oldblk = ent as BlockReference;
-                            if (oldblk == null) { //not block..
+                            if (oldblk == null) {
+                                //not block..
                                 notparsed++;
                                 continue;
                             }
                             var p = oldblk.Position;
-                            Point3d ip = flattern ? new Point3d(p.X,p.Y,0) : p;
+                            Point3d ip = flattern ? new Point3d(p.X, p.Y, 0) : p;
                             Scale3d scl = oldblk.ScaleFactors;
                             double rot = oldblk.Rotation;
                             BlockReference newblk = new BlockReference(ip, @new);
@@ -404,7 +406,7 @@ namespace autonet.Forms {
                         Autodesk.AutoCAD.ApplicationServices.Core.Application.SetSystemVariable("nomutt", 1);
 
                         tr.Commit();
-                        if (notparsed>0)
+                        if (notparsed > 0)
                             ed.WriteMessage($"{notparsed} are not blocks and were not replaced.\n");
                         ed.WriteMessage($"{toreplace.Count} were replaced to block {masterblock.Name} successfully.\n");
                     }
@@ -413,6 +415,49 @@ namespace autonet.Forms {
                 ed.WriteMessage(ex.Message + "\n" + ex.StackTrace);
             } finally {
                 Autodesk.AutoCAD.ApplicationServices.Core.Application.SetSystemVariable("nomutt", nomutt);
+            }
+        }
+
+        [CommandMethod("mrotate", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void MRotateCommand() {
+            double DegreeToRadian(double angle) {
+                return Math.PI * angle / 180.0d;
+            }
+
+            using (QuickTransaction tr = new QuickTransaction()) {
+                // objects initializing
+                var nomutt = Convert.ToInt32(Autodesk.AutoCAD.ApplicationServices.Core.Application.GetSystemVariable("nomutt"));
+                try {
+                    // Get the current document and database
+                    // Start a transaction
+                    // Open the Block table for read
+                    var _sel = Quick.GetImpliedOrSelect();
+
+                    if (_sel == null || _sel.Count == 0) {
+                        tr.Editor.WriteMessage("Nothing was selected.");
+                        return;
+                    }
+
+                    var howmuch = tr.Editor.GetAngle("How many degrees (Anti Clockwise) to add (Negative will go Clockwise)");
+                    if (howmuch.Status == PromptStatus.Cancel)
+                        return;
+
+                    Matrix3d curUCSMatrix = tr.Doc.Editor.CurrentUserCoordinateSystem;
+                    CoordinateSystem3d curUCS = curUCSMatrix.CoordinateSystem3d;
+                    foreach (SelectedObject o in _sel) {
+                        var obj = (BlockReference) tr.GetObject(o.ObjectId) ?? throw new NullReferenceException("obj");
+                        var matrix = Matrix3d.Rotation(howmuch.Value, curUCS.Zaxis, obj.Position);
+                        obj.TransformBy(matrix);
+                    }
+
+                    // Add the new object to the block table record and the transaction
+                    // Save the new objects to the database
+                    tr.Commit();
+                } catch (System.Exception ex) {
+                    Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                } finally {
+                    Autodesk.AutoCAD.ApplicationServices.Core.Application.SetSystemVariable("nomutt", nomutt);
+                }
             }
         }
 
@@ -444,7 +489,7 @@ namespace autonet.Forms {
                 }
             }
         }
-        
+
         [CommandMethod("SELECTBLOCKS", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void SelectBlocksCommand() {
             Editor ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
@@ -482,12 +527,10 @@ namespace autonet.Forms {
                 ObjectId[] idArray = selSet.GetObjectIds();
                 List<ObjectId> aa = new List<ObjectId>();
 
-                foreach (ObjectId blkId in idArray)
-                {
-                    BlockReference blkRef = (BlockReference)tr.GetObject(blkId, OpenMode.ForRead);
-                    BlockTableRecord btr = (BlockTableRecord)tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
-                    if (WildcardMatch(btr.Name, oldblock, false))
-                    {
+                foreach (ObjectId blkId in idArray) {
+                    BlockReference blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
+                    BlockTableRecord btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
+                    if (WildcardMatch(btr.Name, oldblock, false)) {
                         aa.Add(blkId);
                     }
                     btr.Dispose();
@@ -549,8 +592,7 @@ namespace autonet.Forms {
                 foreach (ObjectId blkId in idArray) {
                     BlockReference blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
-                    if (WildcardMatch(btr.Name, oldblock, false))
-                    {
+                    if (WildcardMatch(btr.Name, oldblock, false)) {
                         aa.Add(blkId);
                         ed.WriteMessage("\nBlock: " + btr.Name);
                     }
