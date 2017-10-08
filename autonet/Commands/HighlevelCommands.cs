@@ -459,9 +459,11 @@ namespace autonet.Forms {
                 }
             }
         }
-
+        const double Rad2Deg = 180.0 / Math.PI;
+        const double Deg2Rad = Math.PI / 180.0;
         [CommandMethod("mtolines", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void AlignBlocks() {
+
             try {
                 var options = new PromptEntityOptions("\nSelect polyline: ");
                 options.SetRejectMessage("Objet non valide.");
@@ -481,15 +483,23 @@ namespace autonet.Forms {
                         try {
                             Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
                             BlockReference blockRef = trans.GetObject(blockId, OpenMode.ForWrite) as BlockReference;
-
+                            var blockpos = blockRef.Position;
                             // better use the center point, instead min/max
                             Point3d pointOverLine = line.GetClosestPointTo(blockRef.Position, false);
+                            //var vectorto = pointOverLine.GetVectorTo(blockRef.Position);
+                            //var ang = vectorto.AngleOnPlane()
                             blockRef.Position = pointOverLine; // move
 
                             // assuming a well behaved 2D block aligned with XY
-                            Vector3d lineDirection = line.GetFirstDerivative(pointOverLine);
-                            double angleToRotate = Vector3d.XAxis.GetAngleTo(lineDirection, Vector3d.ZAxis);
-                            blockRef.Rotation = angleToRotate;
+                            //Vector3d lineDirection = line.GetFirstDerivative(pointOverLine);
+                            //double angleToRotate = Vector3d.XAxis.GetAngleTo(lineDirection, Vector3d.ZAxis);
+
+                            //angel between block to the nearest point
+                            var b2near = blockpos.Convert2d(new Plane()).GetVectorTo(pointOverLine.Convert2d(new Plane())).Angle * Rad2Deg;
+                            //var pos1 = Math.Atan2(blockpos.Y - pointOverLine.Y, pointOverLine.X - blockpos.X) * Rad2Deg;
+                            //var angeltoblock = lineDirection.GetAngleTo(blockRef.Position.GetAsVector())*Rad2Deg;
+
+                            blockRef.Rotation = (b2near - 90) * Deg2Rad; //-90 to convert to block plane (0 is downwards).
 
                             trans.Commit();
                         } catch (System.Exception ex) {
@@ -512,7 +522,7 @@ namespace autonet.Forms {
             var result = Quick.Editor.GetEntity(options);
             if (result.Status != PromptStatus.OK)
                 return;
-            var plineId = result.ObjectId;
+            var lineId = result.ObjectId;
 
             options.Message = "\nSelect block: ";
             options.RemoveAllowedClass(typeof(Polyline));
@@ -521,34 +531,25 @@ namespace autonet.Forms {
             if (result.Status != PromptStatus.OK)
                 return;
             var blockId = result.ObjectId;
-
-            Align(plineId, blockId);
-        }
-
-        private static void Align(ObjectId lineId, ObjectId blockId) {
-            if (lineId.ObjectClass != RXClass.GetClass(typeof(Polyline)))
-                throw new Autodesk.AutoCAD.Runtime.Exception(Autodesk.AutoCAD.Runtime.ErrorStatus.InvalidInput, "1st parameter must be a Polyline");
-            if (blockId.ObjectClass != RXClass.GetClass(typeof(BlockReference)))
-                throw new Autodesk.AutoCAD.Runtime.Exception(Autodesk.AutoCAD.Runtime.ErrorStatus.InvalidInput, "2nd parameter must be a block");
-
             Database db = lineId.Database;
             using (Transaction trans = db.TransactionManager.StartTransaction()) {
-                Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
-                BlockReference blockRef = trans.GetObject(blockId, OpenMode.ForWrite) as BlockReference;
+                try {
+                    Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
+                    BlockReference blockRef = trans.GetObject(blockId, OpenMode.ForWrite) as BlockReference;
+                    var blockpos = blockRef.Position;
+                    Point3d pointOverLine = line.GetClosestPointTo(blockRef.Position, false);
+                    blockRef.Position = pointOverLine; // move
 
-                // better use the center point, instead min/max
-                Point3d pointOverLine = line.GetClosestPointTo(blockRef.Position, false);
-                blockRef.Position = pointOverLine; // move
-
-                // assuming a well behaved 2D block aligned with XY
-                Vector3d lineDirection = line.GetFirstDerivative(pointOverLine);
-                double angleToRotate = Vector3d.XAxis.GetAngleTo(lineDirection, Vector3d.ZAxis);
-                blockRef.Rotation = angleToRotate;
-
-                trans.Commit();
+                    //angel between block to the nearest point
+                    var b2near = blockpos.Convert2d(new Plane()).GetVectorTo(pointOverLine.Convert2d(new Plane())).Angle * Rad2Deg;
+                    blockRef.Rotation = (b2near - 90) * Deg2Rad; //-90 to convert to block plane (0 is downwards).
+                    trans.Commit();
+                } catch (System.Exception ex) {
+                    Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                }
             }
         }
-
+        
         public static void ApplyAttributes(Database db, QuickTransaction tr, BlockReference bref) {
             if (bref == null)
                 return;
