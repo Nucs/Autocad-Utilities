@@ -459,11 +459,12 @@ namespace autonet.Forms {
                 }
             }
         }
+
         const double Rad2Deg = 180.0 / Math.PI;
         const double Deg2Rad = Math.PI / 180.0;
+
         [CommandMethod("mtolines", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void AlignBlocks() {
-
             try {
                 var options = new PromptEntityOptions("\nSelect polyline: ");
                 options.SetRejectMessage("Objet non valide.");
@@ -472,7 +473,6 @@ namespace autonet.Forms {
                 if (result.Status != PromptStatus.OK)
                     return;
                 var lineId = result.ObjectId;
-
                 var sel = Quick.GetImpliedOrSelect();
                 if (result.Status != PromptStatus.OK)
                     return;
@@ -483,6 +483,7 @@ namespace autonet.Forms {
                         try {
                             Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
                             BlockReference blockRef = trans.GetObject(blockId, OpenMode.ForWrite) as BlockReference;
+                            if (blockRef == null) continue;
                             var blockpos = blockRef.Position;
                             // better use the center point, instead min/max
                             Point3d pointOverLine = line.GetClosestPointTo(blockRef.Position, false);
@@ -512,7 +513,6 @@ namespace autonet.Forms {
                 Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
         }
-
 
         [CommandMethod("mtoline", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void AlignBlockCommand() {
@@ -549,7 +549,7 @@ namespace autonet.Forms {
                 }
             }
         }
-        
+
         public static void ApplyAttributes(Database db, QuickTransaction tr, BlockReference bref) {
             if (bref == null)
                 return;
@@ -576,6 +576,68 @@ namespace autonet.Forms {
                         tr.AddNewlyCreatedDBObject(attRef, true);
                     }
                 }
+            }
+        }
+
+        [CommandMethod("addcurve", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void AddCurveCommand() {
+            try {
+                var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
+                options.SetRejectMessage("Invalid Object.");
+                options.AddAllowedClass(typeof(Polyline), true);
+                var result = Quick.Editor.GetEntity(options);
+                if (result.Status != PromptStatus.OK)
+                    return;
+                var lineId = result.ObjectId;
+                var pickpoint = result.PickedPoint;
+
+                var qtarget = Quick.Editor.GetPoint(new PromptPointOptions("Pick the strech point.") {AllowNone = false, BasePoint = pickpoint, UseBasePoint = true, UseDashedLine = true});
+                if (qtarget.Status != PromptStatus.OK)
+                    return;
+                var target = qtarget.Value;
+
+                Database db = lineId.Database;
+
+                using (Transaction trans = db.TransactionManager.StartTransaction()) {
+                    try {
+                        Polyline line = trans.GetObject(lineId, OpenMode.ForRead) as Polyline;
+                        Point3d breakpoint = Point3d.Origin;
+                        for (int i = 0; i < line.NumberOfVertices; i++) {
+                            Curve2d part = null;
+                            switch (line.GetSegmentType(i)) {
+                                case SegmentType.Line:
+                                    part = line.GetLineSegment2dAt(i);
+                                    part.GetClosestPointTo(target)
+                                    break;
+                                case SegmentType.Arc:
+                                    part = line.GetArcSegment2dAt(i);
+                                    break;
+                                case SegmentType.Coincident:
+                                case SegmentType.Point:
+                                case SegmentType.Empty:
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+                        }
+
+                        Polyline newblk = new BlockReference(ip, @new);
+                        newblk.SetPropertiesFrom(ent);
+                        newblk.Rotation = rot;
+                        newblk.ScaleFactors = scl;
+                        tr.BlockTableRecordCurrentSpace.AppendEntity(newblk);
+                        tr.AddNewlyCreatedDBObject(newblk, true);
+                        ApplyAttributes(db, tr, newblk);
+                        oldblk.UpgradeOpen();
+                        oldblk.Erase();
+                        oldblk.Dispose();
+                        os.Add(newblk.ObjectId);
+                        trans.Commit();
+                    } catch (System.Exception ex) {
+                        Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                    }
+                }
+            } catch (System.Exception ex) {
+                Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
         }
 

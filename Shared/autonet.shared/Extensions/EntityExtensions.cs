@@ -197,5 +197,8 @@ namespace autonet.Extensions {
         private static bool Clockwise(Point2d p1, Point2d p2, Point2d p3) {
             return ((p2.X - p1.X) * (p3.Y - p1.Y) - (p2.Y - p1.Y) * (p3.X - p1.X)) < 1e-8;
         }
+
+        public static Point2d 
+
     }
 }
