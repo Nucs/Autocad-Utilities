@@ -1,4 +1,4 @@
-﻿namespace autonet
+﻿/*namespace autonet
 {
     partial class QQForm
     {
@@ -536,4 +536,4 @@
         private System.Windows.Forms.TextBox txtPath;
         private System.Windows.Forms.ToolStripMenuItem deleteSelectedToolStripMenuItem;
     }
-}
+}*/

@@ -1,4 +1,4 @@
-﻿using autonet.Settings;
+﻿/*using autonet.Settings;
 
 namespace autonet.Forms
 {
@@ -591,4 +591,4 @@ namespace autonet.Forms
         private System.Windows.Forms.ToolStripComboBox tsSaveToSources;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
     }
-}
+}*/
