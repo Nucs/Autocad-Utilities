@@ -121,6 +121,12 @@
     <Reference Include="Microsoft.WindowsAPICodePack.Shell, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAPICodePack-Shell.1.1.1\lib\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="nucs.JsonSettings, Version=1.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\nucs.JsonSettings.1.0.0.1\lib\net461\nucs.JsonSettings.dll</HintPath>
+    </Reference>
     <Reference Include="PopupControl, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AdamsLair.WinForms.PopupControl.1.0.0.0\lib\net40\PopupControl.dll</HintPath>
     </Reference>
@@ -129,8 +135,8 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\net461\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -144,10 +150,12 @@
   <ItemGroup>
     <Compile Include="Commands\HighlevelCommands.cs" />
     <Compile Include="Extensions\ColorExtensions.cs" />
+    <Compile Include="Extensions\SelectionFilters.cs" />
     <Compile Include="Forms\QQSelectForm.cs" />
     <Compile Include="Forms\QQSelectForm.Designer.cs">
       <DependentUpon>QQSelectForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="JigIt.cs" />
     <Compile Include="LayerComboBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -158,7 +166,9 @@
       <DependentUpon>SourcesEditorForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MagicPoly.cs" />
+    <Compile Include="OnStartup.cs" />
     <Compile Include="MergePolylines.cs" />
+    <Compile Include="OSnapping.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -240,6 +250,5 @@
   </ItemGroup>
   <Import Project="..\Shared\autonet.addons\autonet.addons.projitems" Label="Shared" />
   <Import Project="..\Shared\autonet.shared\autonet.shared.projitems" Label="Shared" />
-  <Import Project="..\External Libraries\Newtonsoft.Json\Newtonsoft.Json.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

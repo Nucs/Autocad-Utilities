@@ -3,16 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using autonet.Extensions;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using Common;
 using Linq.Extras;
 using MoreLinq;
+using nucs.JsonSettings;
+using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 using Exception = System.Exception;
 
 namespace autonet.Forms {
     public static class HighlevelCommands {
+        public static dynamic Settings = JsonSettings.Load<SettingsBag>(Paths.ConfigFile("autonet-commands.json").FullName).EnableAutosave().AsDynamic();
+
         private const double Rad2Deg = 180.0 / Math.PI;
 
         private const double Deg2Rad = Math.PI / 180.0;
@@ -101,12 +107,25 @@ namespace autonet.Forms {
             QQManager.CreateNewConfig();
         }
 */
+
         [CommandMethod("Quicky", "asd", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void DoitCommand() {
-            var imp = Quick.GetImpliedOrSelect();
-            using (var tr = new QuickTransaction()) {
-                tr.Commit();
+            _retry:
+            var result = Quick.Editor.GetSelection(new PromptSelectionOptions {SingleOnly = true, AllowDuplicates = false, }, SelectionFilters.AllowAny(EntityType.AnyPolyline, EntityType.Arc));
+            var ptr = AcadProperties.Cursor;
+            /*var result = Quick.Editor.GetEntity(options);*/
+            if (result.Status != PromptStatus.OK) {
+                if (result.Status == PromptStatus.Cancel)
+                    return;
+                goto _retry;
             }
+
+            using (var tr = new QuickTransaction()) ;
+            ptr = OSnapping.SnapIfEnabled(ptr);
+            
+            //var Quick.Editor.Get
+            var lineId = result.Value[0].ObjectId;
+            //var pickpoint = result.PickedPoint.ToPoint2D();
         }
 
         [CommandMethod("Quicky", "ws", CommandFlags.UsePickSet | CommandFlags.Redraw)]
@@ -266,7 +285,9 @@ namespace autonet.Forms {
         }
                 */
 
-        //[CommandMethod("mrotate", CommandFlags.Session | CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+
+
+        #region Magic Family
         /*public static void MagicRotateCommand() {
             double DegreeToRadian(double angle) => Math.PI * angle / 180.0;
             double RadianToDegree(double angle) => angle * (180.0 / Math.PI);
@@ -514,6 +535,8 @@ namespace autonet.Forms {
             }
         }
 
+
+        [CommandMethod("ac", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         [CommandMethod("addcurve", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void AddCurveCommand() {
             double GetAngle(Point2d a, Point2d b) {
@@ -526,6 +549,7 @@ namespace autonet.Forms {
                 var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
                 options.SetRejectMessage("Invalid Object.");
                 options.AddAllowedClass(typeof(Polyline), true);
+                
                 var result = Quick.Editor.GetEntity(options);
                 if (result.Status != PromptStatus.OK)
                     return;
@@ -556,13 +580,26 @@ namespace autonet.Forms {
                         leftcut[1].Erase();
 
                         var buldge = Math.Tan((90d * 0.85 * Deg2Rad) / 4);
-                        leftpoly.AddVertexAt(leftpoly.NumberOfVertices, target, 0, leftpoly.GetStartWidthAt(leftpoly.NumberOfVertices-1), leftpoly.GetEndWidthAt(leftpoly.NumberOfVertices - 1));
-                        leftpoly.SetBulgeAt(leftpoly.NumberOfVertices-2, buldge);
+                        leftpoly.AddVertexAt(leftpoly.NumberOfVertices, target, 0, leftpoly.GetStartWidthAt(leftpoly.NumberOfVertices - 1), leftpoly.GetEndWidthAt(leftpoly.NumberOfVertices - 1));
+                        leftpoly.SetBulgeAt(leftpoly.NumberOfVertices - 2, buldge);
                         rightpoly.AddVertexAt(0, target, buldge, leftpoly.GetStartWidthAt(0), leftpoly.GetEndWidthAt(0));
                         tr.Transaction.TransactionManager.QueueForGraphicsFlush();
-                        if (Quick.AskQuestion("Rotate Direction?", false) ?? false == true) {
-                        leftpoly.SetBulgeAt(leftpoly.NumberOfVertices-2, -buldge);
-                            rightpoly.SetBulgeAt(0, -buldge);
+
+                        void setdir(bool right) {
+                            if (right) {
+                                leftpoly.SetBulgeAt(leftpoly.NumberOfVertices - 2, buldge);
+                                rightpoly.SetBulgeAt(0, buldge);
+                            } else {
+                                leftpoly.SetBulgeAt(leftpoly.NumberOfVertices - 2, -buldge);
+                                rightpoly.SetBulgeAt(0, -buldge);
+                            }
+                        }
+
+                        setdir(Settings.addcurve_direction as bool? ?? true);
+
+                        if (Quick.AskQuestion("Reverse Direction?", false) ?? false == true) {
+                            var val = Settings["addcurve_direction"] = !((Settings["addcurve_direction"] as bool?) ?? false);
+                            setdir(val);
                         }
 
                         tr.Commit();
@@ -574,57 +611,56 @@ namespace autonet.Forms {
                 Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
         }
-
-/*        [CommandMethod("cccc", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
-        public static void AddCurveCommandy() {
-            try {
-                var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
-                options.SetRejectMessage("Invalid Object.");
-                options.AddAllowedClass(typeof(Polyline), true);
-                var result = Quick.Editor.GetEntity(options);
-                if (result.Status != PromptStatus.OK)
-                    return;
-                var lineId = result.ObjectId;
-
-                using (var tr = new QuickTransaction()) {
+        /*        [CommandMethod("cccc", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+                public static void AddCurveCommandy() {
                     try {
-                        var poly = tr.GetObject(lineId, OpenMode.ForWrite) as Polyline;
-                        for (int i = 0; i < poly.NumberOfVertices; i++) {
-                            Quick.WriteLine($"\n{poly.GetSegmentType(i)}  |  {poly.GetBulgeAt(i)}");
-                        }
-                        if (poly != null) poly.SetBulgeAt(poly.NumberOfVertices - 1, Quick.Editor.GetDouble("Get Bulge").Value);
+                        var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
+                        options.SetRejectMessage("Invalid Object.");
+                        options.AddAllowedClass(typeof(Polyline), true);
+                        var result = Quick.Editor.GetEntity(options);
+                        if (result.Status != PromptStatus.OK)
+                            return;
+                        var lineId = result.ObjectId;
 
-                        tr.Commit();
+                        using (var tr = new QuickTransaction()) {
+                            try {
+                                var poly = tr.GetObject(lineId, OpenMode.ForWrite) as Polyline;
+                                for (int i = 0; i < poly.NumberOfVertices; i++) {
+                                    Quick.WriteLine($"\n{poly.GetSegmentType(i)}  |  {poly.GetBulgeAt(i)}");
+                                }
+                                if (poly != null) poly.SetBulgeAt(poly.NumberOfVertices - 1, Quick.Editor.GetDouble("Get Bulge").Value);
+
+                                tr.Commit();
+                            } catch (Exception ex) {
+                                Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                            }
+                        }
                     } catch (Exception ex) {
                         Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
                     }
-                }
-            } catch (Exception ex) {
-                Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
-            }
-        }*/
+                }*/
 
-   /*     [CommandMethod("bro")]
-        public static void BreakOnPointOffsetCommand() {
-            try {
-                var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
-                options.SetRejectMessage("Invalid Object.");
-                options.AddAllowedClass(typeof(Curve), false);
-                options.AllowObjectOnLockedLayer = false;
+        /*     [CommandMethod("bro")]
+             public static void BreakOnPointOffsetCommand() {
+                 try {
+                     var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
+                     options.SetRejectMessage("Invalid Object.");
+                     options.AddAllowedClass(typeof(Curve), false);
+                     options.AllowObjectOnLockedLayer = false;
 
-                var result = Quick.Editor.GetEntity(options);
-                if (result.Status != PromptStatus.OK)
-                    return;
-                var curveId = result.ObjectId;
+                     var result = Quick.Editor.GetEntity(options);
+                     if (result.Status != PromptStatus.OK)
+                         return;
+                     var curveId = result.ObjectId;
 
-                using (var tr = new QuickTransaction()) {
-                    var ent = (Curve) tr.GetObject(curveId, OpenMode.ForRead, false);
-                    ent.BreakOnPoint(ent.OffsetToEnd(result.PickedPoint, 10d).Item1, tr, true).SetSelected();
-                }
-            } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
-                Autodesk.AutoCAD.ApplicationServices.Core.Application.ShowAlertDialog("\n" + ex.Message + "\n" + ex.StackTrace);
-            }
-        }*/
+                     using (var tr = new QuickTransaction()) {
+                         var ent = (Curve) tr.GetObject(curveId, OpenMode.ForRead, false);
+                         ent.BreakOnPoint(ent.OffsetToEnd(result.PickedPoint, 10d).Item1, tr, true).SetSelected();
+                     }
+                 } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+                     Autodesk.AutoCAD.ApplicationServices.Core.Application.ShowAlertDialog("\n" + ex.Message + "\n" + ex.StackTrace);
+                 }
+             }*/
 
         [CommandMethod("br")]
         public static void BreakOnPointCommand() {
@@ -647,7 +683,7 @@ namespace autonet.Forms {
                 Autodesk.AutoCAD.ApplicationServices.Core.Application.ShowAlertDialog(ex.Message + "\n" + ex.StackTrace);
             }
         }
-
+#endregion
         [CommandMethod("SELECTBLOCKS", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void SelectBlocksCommand() {
             var ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
