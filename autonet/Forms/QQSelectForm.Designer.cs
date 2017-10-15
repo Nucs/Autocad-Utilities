@@ -1,4 +1,4 @@
-﻿namespace autonet
+﻿/*namespace autonet
 {
     partial class QQSelectForm
     {
@@ -490,4 +490,4 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.CheckBox chkHidePath;
     }
-}
+}*/

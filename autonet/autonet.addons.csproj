@@ -110,9 +110,6 @@
       <HintPath>..\packages\AutoCAD-2017.Net.Interop.x86.1.0.0\lib\net46\Autodesk.AutoCAD.Interop.Common.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="BizArk.Core, Version=3.0.0.35, Culture=neutral, PublicKeyToken=2aedb370d677d8c5, processorArchitecture=MSIL">
-      <HintPath>..\packages\BizArk.Core.3.0.0.35-beta\lib\net45\BizArk.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Office.Interop.Outlook, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Office.Interop.Outlook.15.0.4797.1003\lib\net20\Microsoft.Office.Interop.Outlook.dll</HintPath>
       <Private>True</Private>
@@ -132,8 +129,8 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\net461\System.ValueTuple.dll</HintPath>
+    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
@@ -147,9 +144,7 @@
   <ItemGroup>
     <Compile Include="Commands\HighlevelCommands.cs" />
     <Compile Include="Extensions\ColorExtensions.cs" />
-    <Compile Include="Forms\QQSelectForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Forms\QQSelectForm.cs" />
     <Compile Include="Forms\QQSelectForm.Designer.cs">
       <DependentUpon>QQSelectForm.cs</DependentUpon>
     </Compile>
@@ -173,15 +168,11 @@
     <Compile Include="QQManager.cs" />
     <Compile Include="Settings\QQAppConfig.cs" />
     <Compile Include="Settings\QQConfigurationFile.cs" />
-    <Compile Include="Forms\QQForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Forms\QQForm.cs" />
     <Compile Include="Forms\QQForm.Designer.cs">
       <DependentUpon>QQForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\QQConfigForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Forms\QQConfigForm.cs" />
     <Compile Include="Forms\QQConfigForm.Designer.cs">
       <DependentUpon>QQConfigForm.cs</DependentUpon>
     </Compile>

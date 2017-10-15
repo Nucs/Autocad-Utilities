@@ -242,6 +242,17 @@ namespace autonet {
             }
             return sel.Status != PromptStatus.OK ? null : sel.Value;
         }
+
+        public static T[] SetSelected<T>(this IEnumerable<T> ss, bool runsssetfirst = false) where T : DBObject {
+            var arr = ss.ToArray();
+            SetSelected(arr.Select(o=>o.ObjectId).ToArray());
+            return arr;
+        }
+
+        public static void SetSelected(IEnumerable<DBObject> ss, bool runsssetfirst = false) {
+            SetSelected(ss.Select(o=>o.ObjectId).ToArray());
+        }
+
         public static void SetSelected(ObjectId[] ss, bool runsssetfirst = false) {
             Quick.SetImpliedSelection(ss);
             //Quick.SetImpliedSelection(Quick.SelectImplied().Value);
