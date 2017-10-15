@@ -3,36 +3,39 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SharpShell.SharpContextMenu;
 using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
-using SharpShell.Attributes;
-using DSOFile;
 
 using Microsoft.WindowsAPICodePack.Shell;
 using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 
 namespace CustomPropertyExtension
 {
-    public class Program
+    public static class Program
     {
         public static void Main()
         {
-            const string s = "C:/Users/eli/Documents/m.msg";
+           var v = new FileSystemWatcher("E:/");
+            v.IncludeSubdirectories = true;
+            v.Created += VOnCreated;
+            v.
+            v.Filter = "*.srt";
+            v.EnableRaisingEvents = true;
+            Console.ReadLine();
+        }
 
-            string filePath = s;
-            var file = ShellFile.FromFilePath(filePath);
+        private static void VOnCreated(object sender, FileSystemEventArgs args) {
+            Console.WriteLine(args.FullPath);
+        }
 
-            // Read and Write:
+        public static void SetSendDate(this FileInfo f, DateTime dt) {
+            using (var file = ShellFile.FromFilePath(f.FullName)) {
+                using (ShellPropertyWriter propertyWriter = file.Properties.GetPropertyWriter()) {
+                    propertyWriter.WriteProperty(SystemProperties.System.Message.DateSent, DateTime.Now);
+                }
+            }
 
-            string[] oldAuthors = file.Properties.System.Author.Value;
-            string oldTitle = file.Properties.System.Title.Value;
-
-            file.Properties.System.Author.Value = new string[] { "Author #1", "Author #2" };
-            ShellPropertyWriter propertyWriter = file.Properties.GetPropertyWriter();
-            propertyWriter.WriteProperty(SystemProperties.System.Message.DateSent, DateTime.Now);
-            propertyWriter.Close();
         }
     }
 }
