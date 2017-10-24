@@ -289,7 +289,7 @@ namespace autonet {
         }
 
         /// <summary>
-        ///     Ask a question, dont add : or ? at the end nor \n at the beggining
+        ///     Ask a question, dont add : or ? at the end nor <br></br> at the beggining
         /// </summary>
         /// <param name="question"></param>
         /// <param name="defaultval"></param>
