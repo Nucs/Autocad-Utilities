@@ -25,5 +25,9 @@ namespace autonet.Extensions {
         public static void SetSelected(this QuickTransaction tr, SelectionSet ss, bool runsssetfirst = false) {
             Quick.SetSelected(ss, runsssetfirst);
         }
+        public static SelectionSet SetSelected(this SelectionSet ss) {
+            Quick.SetSelected(ss);
+            return ss;
+        }
     }
 }

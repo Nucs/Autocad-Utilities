@@ -111,7 +111,7 @@ namespace autonet.Forms {
         [CommandMethod("Quicky", "asd", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void DoitCommand() {
             _retry:
-            var result = Quick.Editor.GetSelection(new PromptSelectionOptions {SingleOnly = true, AllowDuplicates = false, }, SelectionFilters.AllowAny(EntityType.AnyPolyline, EntityType.Arc));
+            var result = Quick.Editor.GetSelection(new PromptSelectionOptions {SingleOnly = true, AllowDuplicates = false,}, SelectionFilters.AllowAny(EntityType.AnyPolyline, EntityType.Arc));
             var ptr = AcadProperties.Cursor;
             /*var result = Quick.Editor.GetEntity(options);*/
             if (result.Status != PromptStatus.OK) {
@@ -122,7 +122,7 @@ namespace autonet.Forms {
 
             using (var tr = new QuickTransaction()) ;
             ptr = OSnapping.SnapIfEnabled(ptr);
-            
+
             //var Quick.Editor.Get
             var lineId = result.Value[0].ObjectId;
             //var pickpoint = result.PickedPoint.ToPoint2D();
@@ -286,8 +286,8 @@ namespace autonet.Forms {
                 */
 
 
-
         #region Magic Family
+
         /*public static void MagicRotateCommand() {
             double DegreeToRadian(double angle) => Math.PI * angle / 180.0;
             double RadianToDegree(double angle) => angle * (180.0 / Math.PI);
@@ -549,7 +549,9 @@ namespace autonet.Forms {
                 var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
                 options.SetRejectMessage("Invalid Object.");
                 options.AddAllowedClass(typeof(Polyline), true);
-                
+                options.AddAllowedClass(typeof(Polyline2d), true);
+                options.AddAllowedClass(typeof(Polyline3d), true);
+
                 var result = Quick.Editor.GetEntity(options);
                 if (result.Status != PromptStatus.OK)
                     return;
@@ -561,7 +563,7 @@ namespace autonet.Forms {
                 var target = qtarget.Value.ToPoint2D();
                 using (var tr = new QuickTransaction()) {
                     try {
-                        var poly = tr.GetObject(lineId, OpenMode.ForWrite) as Polyline;
+                        var poly = tr.GetObject(lineId, OpenMode.ForWrite) as Curve;
                         Curve2d part = null;
                         var distance = target.GetDistanceTo(pickpoint);
 
@@ -662,7 +664,7 @@ namespace autonet.Forms {
                  }
              }*/
 
-        [CommandMethod("br")]
+        [CommandMethod("br", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void BreakOnPointCommand() {
             try {
                 var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
@@ -683,7 +685,100 @@ namespace autonet.Forms {
                 Autodesk.AutoCAD.ApplicationServices.Core.Application.ShowAlertDialog(ex.Message + "\n" + ex.StackTrace);
             }
         }
-#endregion
+
+        #endregion
+
+        [CommandMethod("si", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        [CommandMethod("sinside", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void SelectInsideCommand() {
+            var _e = new Point3d(double.MinValue, double.MinValue, double.MinValue);
+            try {
+                var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
+                options.SetRejectMessage("Invalid Object.");
+                options.AddAllowedClass(typeof(Curve), false);
+                options.AllowObjectOnLockedLayer = false;
+
+                var result = Quick.Editor.GetEntity(options);
+                if (result.Status != PromptStatus.OK)
+                    return;
+                var curveId = result.ObjectId;
+
+                using (var tr = new QuickTransaction()) {
+                    var ent = (Polyline) tr.GetObject(curveId, OpenMode.ForRead, false);
+                    var c = Quick.Editor.SelectAll().Value.GetObjectIds().Select(o => tr.GetObject(o, OpenMode.ForRead, true)).Where(o=>ent.IsInsidePolygon(o.GetPosition(_e))).ToArray();
+                    c.SetSelected();
+                    //ent.BreakOnPoint(result.PickedPoint.ToPoint2D(), tr, true).SetSelected();
+                }
+            } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+                Application.ShowAlertDialog(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        [CommandMethod("sii", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        [CommandMethod("sinsideintersect", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        public static void SelectInsideIntersectCommand() {
+            var _e = new Point3d(double.MinValue, double.MinValue, double.MinValue);
+            try {
+                var imp = Quick.GetImpliedOrSelect();
+                if (imp == null) {
+                    Quick.WriteLine("[sii] No objects were selected.");
+                    return;
+                }
+                var options = new PromptEntityOptions("\nSelect a point on a polyline: ");
+                options.SetRejectMessage("Invalid Object.");
+                options.AddAllowedClass(typeof(Curve), false);
+                options.AllowObjectOnLockedLayer = false;
+
+                var result = Quick.Editor.GetEntity(options);
+                if (result.Status != PromptStatus.OK)
+                    return;
+                var curveId = result.ObjectId;
+
+                using (var tr = new QuickTransaction()) {
+                    var pl = (Polyline) tr.GetObject(curveId, OpenMode.ForRead, false);
+                    var c = imp.GetObjectIds()
+                        .Select(o => tr.GetObject(o, OpenMode.ForRead, true))
+                        .AreInsidePolyline(tr, pl)
+                        .ToArray()
+                        .ToSelectionSet()
+                        .SetSelected();
+
+                    /*var rest = c.Cast<DBObject>()
+                        .IntersectBy(imp.Cast<SelectedObject>().Select(o=>tr.GetObject(o.ObjectId,false)).ToArray(), o => o.ObjectId.Handle.Value)
+                        .Select(o => o.ObjectId)
+                        .ToSelectionSet(SelectionMethod.Crossing)
+                        .SetSelected();
+                    */
+                    //ent.BreakOnPoint(result.PickedPoint.ToPoint2D(), tr, true).SetSelected();
+                }
+            } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+                Autodesk.AutoCAD.ApplicationServices.Core.Application.ShowAlertDialog(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        public class CleverSelection {
+            //todo finish this part off, auto add and auto remove.
+            //also automate adding as DBObject.
+            private readonly List<ObjectId> _objectsIds = new List<ObjectId>();
+
+            public IReadOnlyCollection<ObjectId> ObjectsIds => _objectsIds;
+
+
+            public CleverSelection(IEnumerable<ObjectId> objids) {
+                _objectsIds.AddRange(objids);
+            }
+
+            public void Add(ObjectId oid) {
+                
+            }
+
+            public void AddRange(IEnumerable<ObjectId> oid) {
+                
+            }
+        }
+
+        //Point inside a polyline came from the Solution 2 (2d) section of this website http://paulbourke.net/geometry/insidepoly/
+
 
         [CommandMethod("SELECTBLOCKS", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void SelectBlocksCommand() {

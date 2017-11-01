@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -324,5 +325,158 @@ namespace autonet.Extensions {
                 return Tuple.Create(basepoint,false);
             }
         }
+        public static Point3d GetPosition(this DBObject obj, Point3d @default) {
+            try {
+                return GetPosition(obj) ?? @default;
+            } catch {
+                return @default;
+            }
+        }
+
+        public static Point3d? GetPosition(this DBObject obj) {
+            switch (obj) {
+                case BlockReference blockReference:
+                    return blockReference.Position;
+                case Circle circle:
+                    return circle.Center;
+                case DBText dbText:
+                    return dbText.Position;
+                case Ellipse ellipse:
+                    return ellipse.Center;
+                case Hatch hatch:
+                    return hatch.Origin.ToPoint3D();
+                case Leader leader:
+                    return leader.GetPointAtDist(leader.GetLength() / 2);
+                case Line line:
+                    return line.GetPointAtDist(line.GetLength() / 2);
+                case MLeader mLeader:
+                    return mLeader.BlockPosition;
+                case Mline mline:
+                    return new LineSegment3d(mline.VertexAt(0), mline.VertexAt(mline.NumberOfVertices-1)).MidPoint;
+                case MText mText:
+                    return mText.Location;
+                case PdfReference pdfReference:
+                    return pdfReference.Position;
+                case Polyline polyline:
+                    return polyline.GetPointAtDist(polyline.GetLength() / 2);
+                case Polyline2d polyline2D:
+                    return polyline2D.GetPointAtDist(polyline2D.GetLength() / 2);
+                case Polyline3d polyline3D:
+                    return polyline3D.GetPointAtDist(polyline3D.GetLength() / 2);
+                case PolylineVertex3d polylineVertex3D:
+                    return polylineVertex3D.Position;
+                case Shape shape:
+                    return shape.Position;
+                case Spline spline:
+                    return spline.GetPointAtDist(spline.GetLength() / 2);
+                case Viewport vp:
+                    return vp.CenterPoint;
+                case DBPoint point:
+                    return point.Position;
+                case RotatedDimension rdim:
+                    return new LineSegment3d(rdim.XLine1Point, rdim.XLine2Point).MidPoint;
+                case Ole2Frame ole2Frame:
+                    return ole2Frame.Location;
+                case Face face:
+                    return new LineSegment3d(face.GetVertexAt(1), face.GetVertexAt(4)).MidPoint;
+                case AlignedDimension adim:
+                    return new LineSegment3d(adim.XLine1Point, adim.XLine2Point).MidPoint;
+                case null:
+                    return null;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(obj));
+            }
+        }
+
+        /// <summary>
+        /// Check if the point is within the polyline
+        /// </summary>
+        /// <param name="polygon"></param>
+        /// <param name="pt"></param>
+        /// <returns></returns>
+        public static bool IsInsidePolygon(this Polyline polygon, Point3d pt) {
+            int n = polygon.NumberOfVertices;
+            double angle = 0;
+
+            for (int i = 0; i < n; i++) {
+                Point pt1 = new Point {
+                    X = polygon.GetPoint2dAt(i).X - pt.X,
+                    Y = polygon.GetPoint2dAt(i).Y - pt.Y
+                };
+                Point pt2 = new Point {
+                    X = polygon.GetPoint2dAt((i + 1) % n).X - pt.X,
+                    Y = polygon.GetPoint2dAt((i + 1) % n).Y - pt.Y
+                };
+                angle += Angle2D(pt1.X, pt1.Y, pt2.X, pt2.Y);
+            }
+
+            return !(Math.Abs(angle) < Math.PI);
+        }
+
+        /// <summary>
+        /// Point structure to add IsInsidePolygon function
+        /// </summary>
+        private struct Point {
+            public double X, Y;
+        };
+
+        /*
+           
+        */
+        /// <summary>
+        /// Return the angle between two vectors on a plane
+        /// The angle is from vector 1 to vector 2, positive anticlockwise
+        /// The result is between -pi -> pi
+        /// </summary>
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        /// <returns></returns>
+        public static double Angle2D(double x1, double y1, double x2, double y2) {
+            double dtheta, theta1, theta2;
+
+            theta1 = Math.Atan2(y1, x1);
+            theta2 = Math.Atan2(y2, x2);
+            dtheta = theta2 - theta1;
+            while (dtheta > Math.PI)
+                dtheta -= (Math.PI * 2);
+            while (dtheta < -Math.PI)
+                dtheta += (Math.PI * 2);
+            return(dtheta);
+        }
+
+        public static IEnumerable<DBObject> AreInsidePolyline(this IEnumerable<ObjectId> objs, QuickTransaction tr, Polyline pl) {
+            return AreInsidePolyline(objs.Select(o=>tr.GetObject(o, OpenMode.ForRead)),tr, pl);
+        }
+
+        public static IEnumerable<DBObject> AreInsidePolyline(this IEnumerable<DBObject> objs, QuickTransaction tr, Polyline pl) {
+            Point3dCollection pntCol = new Point3dCollection();
+            for (int i = 0; i < pl.NumberOfVertices-1; i++) {
+                pntCol.Add(pl.GetPoint3dAt(i));
+            }
+
+            int numOfEntsFound = 0;
+            //new PointCollector();
+            var pmtSelRes = Quick.Editor.SelectWindowPolygon(pntCol);
+            if (pmtSelRes.Status != PromptStatus.OK)
+                yield break;
+            // May not find entities in the UCS area
+            // between p1 and p3 if not PLAN view
+            // pmtSelRes =
+            //    ed.SelectCrossingWindow(p1, p3, selFilter);
+            var _objs = objs.ToArray();
+            if (pmtSelRes.Status == PromptStatus.OK) {
+                foreach (ObjectId objId in pmtSelRes.Value.GetObjectIds()) {
+                    numOfEntsFound++;
+                    if (_objs.Any(o=>o.ObjectId.Handle.Value==objId.Handle.Value))
+                        yield return tr.GetObject(objId, false);
+                }
+                Quick.Editor.WriteMessage("Entities found " + numOfEntsFound.ToString());
+            }
+            else
+                Quick.Editor.WriteMessage("\nDid not find entities");
+        }
+        
     }
 }

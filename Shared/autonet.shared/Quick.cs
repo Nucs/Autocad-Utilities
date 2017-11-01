@@ -51,7 +51,7 @@ namespace autonet {
         }
 
         public static void WriteLine(object s) {
-            Write(s + "\n");
+            Write($"\n{s}\n");
         }
 
         public static void Write(object s) {
@@ -296,11 +296,12 @@ namespace autonet {
         /// <returns></returns>
         public static bool? AskQuestion(string question, bool defaultval) {
             recapture:
-            PromptStringOptions opts = new PromptStringOptions($"\n{question}: [Y/N] ");
-            opts.AllowSpaces = false;
-            opts.DefaultValue = defaultval ? "Y" : "N";
-            opts.UseDefaultValue = true;
-            
+            PromptStringOptions opts = new PromptStringOptions($"\n{question}: [Y/N] ") {
+                AllowSpaces = false,
+                DefaultValue = defaultval ? "Y" : "N",
+                UseDefaultValue = true
+            };
+
             PromptResult ret = Editor.GetString(opts);
             if (ret.Status == PromptStatus.Cancel)
                 return null;

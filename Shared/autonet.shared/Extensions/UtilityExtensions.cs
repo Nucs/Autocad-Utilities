@@ -174,7 +174,7 @@ namespace autonet.Extensions {
             if (curve == null) return 0;
             return curve.GetDistanceAtParameter(curve.EndParam) - curve.GetDistanceAtParameter(curve.StartParam);
         }
-
+   
         public static double GetArcBulge(this Arc arc) {
             double deltaAng = arc.EndAngle - arc.StartAngle;
             if (deltaAng < 0)

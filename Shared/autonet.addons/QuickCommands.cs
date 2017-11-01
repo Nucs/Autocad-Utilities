@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using autonet.Extensions;
 using autonet.Settings;
@@ -9,10 +10,10 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Common;
 using YourCAD.Utilities;
+using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 
 namespace autonet {
     public static class QuickCommands {
-
         //("Quicky", "fq", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         /*/// <summary>
         ///     does hbreg to selection
@@ -84,9 +85,15 @@ namespace autonet {
                                 break;
                             case Spline sp:
                                 l += sp.GetLength();
-                                break; //l+= sp.ToPolyline().
+                                break;
                             case Curve sp:
                                 l += sp.GetLength();
+                                break;
+                            case Mline mline:
+                                if (mline.NumberOfVertices > 1)
+                                    for (int i = 1; i < mline.NumberOfVertices; i++)
+                                        l += mline.VertexAt(i - 1).DistanceTo(mline.VertexAt(i));
+
                                 break;
                             case BlockReference br:
                                 if (br.DynamicBlockReferencePropertyCollection.Count == 0) {
@@ -103,8 +110,7 @@ namespace autonet {
                                         if (string.IsNullOrEmpty(val.ToString()) == false && double.TryParse(val.ToString(), out double res)) {
                                             l += res;
                                             goto _br_exit;
-                                        }
-                                        else {
+                                        } else {
                                             tr.WriteLine($"{br.Name}, {br.BlockName} with property named {att.PropertyName} has no numeric value.");
                                             goto _br_exit;
                                         }
@@ -118,34 +124,15 @@ namespace autonet {
                                 _br_exit:
 
                                 break;
-
-                            case MLeader ldr:
-                                name = ldr.GetType().Name;
+                            case DBText _:
+                            case MLeader _:
+                            case AlignedDimension _:
+                            case Wipeout _:
+                                name = e.GetType().Name;
                                 if (an.Contains(name))
                                     break;
                                 an.Add(name);
-                                tr.WriteLine($"{name} are not counted using this method!");
-                                break;
-                            case DBText dbtext:
-                                name = dbtext.GetType().Name;
-                                if (an.Contains(name))
-                                    break;
-                                an.Add(name);
-                                tr.WriteLine($"{name} are not counted using this method!");
-                                break;
-                            case AlignedDimension dm:
-                                name = dm.GetType().Name;
-                                if (an.Contains(name))
-                                    break;
-                                an.Add(name);
-                                tr.WriteLine($"{name} are not counted using this method!");
-                                break;
-                            case Wipeout wp:
-                                name = wp.GetType().Name;
-                                if (an.Contains(name))
-                                    break;
-                                an.Add(name);
-                                tr.WriteLine($"{name} are not counted using this method!");
+                                tr.WriteLine($"{name} cant be calculated using this method!");
                                 break;
                             default:
                                 tr.WriteLine("Unmappped: " + e.GetType().FullName);
@@ -157,6 +144,72 @@ namespace autonet {
                 tr.WriteLine($"Length: " + l.ToString("##.000"));
             }
         }
+
+        [CommandMethod("XrefGraph")]
+        public static void XrefGraph() {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            foreach (var node in GetNodes(doc)) {
+                doc.Editor.WriteMessage($"\n{node.Name} | {node.Loaded} | {node.FileName}");
+            }
+        }
+
+        public static XrefNode[] GetNodes(Document doc, QuickTransaction tr=null) {
+            string strnullfy(string s) => string.IsNullOrEmpty(s.Trim()) ? null : s;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
+            bool tr_new = tr == null;
+            var ret = new List<XrefNode>();
+            try {
+                tr = tr_new ? new QuickTransaction() : tr;
+
+                db.ResolveXrefs(true, false);
+                XrefGraph xg = db.GetHostDwgXrefGraph(true);
+
+                GraphNode root = xg.RootNode;
+                for (int o = 0; o < root.NumOut; o++) {
+                    XrefGraphNode child = root.Out(o) as XrefGraphNode;
+                    if (child == null) {
+                        ed.WriteMessage($"\nUnable to load xref of type {root.Out(o)?.GetType().FullName}");
+                        continue;
+                    }
+                    //if (child.XrefStatus == XrefStatus.Resolved) {
+                    //BlockTableRecord bl = tr.GetObject(child.BlockTableRecordId, OpenMode.ForRead) as BlockTableRecord;
+                    var t = child.GetType();
+                    try {
+                        Quick.Editor.WriteMessage("\n" + child.Database.Filename);
+                    } catch { }
+                    var status = child.XrefStatus;
+
+                    ret.Add(new XrefNode(
+                        strnullfy(child.Name) ?? strnullfy(child.Database?.ProjectName) ?? strnullfy(Path.GetFileNameWithoutExtension(child.Database?.Filename)) ?? "",
+                        child.Database.Filename,
+                        status == XrefStatus.Resolved || status == XrefStatus.FileNotFound || status == XrefStatus.Unresolved));
+                }
+            } finally {
+                if (tr_new) 
+                    tr?.Dispose();
+            }
+            return ret.ToArray();
+        } 
+
+        public class XrefNode {
+            public string Name { get; set; }
+            public string FileName { get; set; }
+            public bool Loaded { get; set; }
+
+            public XrefNode(string name, string fileName, bool loaded) {
+                Name = name;
+                FileName = fileName;
+                Loaded = loaded;
+            }
+            /*/// <summary>
+            /// Should this xref be loaded at any stage.
+            /// </summary>
+            public bool ShouldBeLoaded => */
+        }
+
+        // Recursively prints out information about the XRef's hierarchy
+        private static void printChildren(GraphNode i_root, string i_indent, Editor i_ed, Transaction i_Tx) { }
 
         /// <summary>
         ///     Counts the lengths of all the selected objects.<br></br>
@@ -223,7 +276,7 @@ namespace autonet {
         }
 
         [CommandMethod("Quicky", "sss", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
-         public static void AAAnyToPolyCommand() {
+        public static void AAAnyToPolyCommand() {
             using (var tr = new QuickTransaction()) {
                 CommandLineHelper.ExecuteStringOverInvoke("E2P ");
                 tr.Commit();
@@ -252,7 +305,7 @@ namespace autonet {
                         trr.SetSelected(elipses);
                         CommandLineHelper.ExecuteStringOverInvoke("E2P ");
                         //trr.StringCommand("E2P ");
-                       // l.Add(trr.SelectImplied().Value);
+                        // l.Add(trr.SelectImplied().Value);
                         trr.Commit();
                     }
                 }
@@ -267,7 +320,6 @@ namespace autonet {
                 }
 
 
-                
                 tr.Commit();
             }
         }
