@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using autonet.Extensions;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -12,6 +13,7 @@ using Common;
 using Linq.Extras;
 using MoreLinq;
 using nucs.JsonSettings;
+using YourCAD.Utilities;
 using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
 using Exception = System.Exception;
 
@@ -563,8 +565,11 @@ namespace autonet.Forms {
                 var target = qtarget.Value.ToPoint2D();
                 using (var tr = new QuickTransaction()) {
                     try {
-                        var poly = tr.GetObject(lineId, OpenMode.ForWrite) as Curve;
-                        Curve2d part = null;
+                        var poly = (Curve) tr.GetObject(lineId, OpenMode.ForWrite);
+                        if (poly is Polyline2d)
+                            poly = poly.ConvertToPolyline(tr);
+                        if (poly is Polyline3d)
+                            throw new InvalidCastException("Can't be applied on polyline of type Polyline3d.");
                         var distance = target.GetDistanceTo(pickpoint);
 
                         var pointRight = poly.OffsetToEnd(result.PickedPoint, distance);
@@ -585,7 +590,6 @@ namespace autonet.Forms {
                         leftpoly.AddVertexAt(leftpoly.NumberOfVertices, target, 0, leftpoly.GetStartWidthAt(leftpoly.NumberOfVertices - 1), leftpoly.GetEndWidthAt(leftpoly.NumberOfVertices - 1));
                         leftpoly.SetBulgeAt(leftpoly.NumberOfVertices - 2, buldge);
                         rightpoly.AddVertexAt(0, target, buldge, leftpoly.GetStartWidthAt(0), leftpoly.GetEndWidthAt(0));
-                        tr.Transaction.TransactionManager.QueueForGraphicsFlush();
 
                         void setdir(bool right) {
                             if (right) {
@@ -599,11 +603,23 @@ namespace autonet.Forms {
 
                         setdir(Settings.addcurve_direction as bool? ?? true);
 
-                        if (Quick.AskQuestion("Reverse Direction?", false) ?? false == true) {
-                            var val = Settings["addcurve_direction"] = !((Settings["addcurve_direction"] as bool?) ?? false);
-                            setdir(val);
-                        }
+                        tr.Transaction.TransactionManager.QueueForGraphicsFlush();
 
+                        // ReSharper disable once AssignmentInConditionalExpression
+                        var ask = (bool?)Quick.AskQuestion("Reverse Direction?", false) ?? false;
+                        if (ask) {
+                            Settings.addcurve_direction = !(Settings.addcurve_direction as bool? ?? false);
+                            setdir(Settings.addcurve_direction);
+                        }
+                        tr.Transaction.TransactionManager.QueueForGraphicsFlush();
+
+
+                        // ReSharper disable once AssignmentInConditionalExpression
+                        if (Settings["addcurve_join"] = Quick.AskQuestion("Join Polylines?", (Settings["addcurve_join"]) ?? !true)) {
+                                new[] {leftpoly.Join(rightpoly, tr)}.SetSelected();
+                        } else {
+                            new[] {leftpoly, rightpoly}.SetSelected();
+                        }
                         tr.Commit();
                     } catch (Exception ex) {
                         Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
@@ -613,6 +629,26 @@ namespace autonet.Forms {
                 Quick.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
         }
+
+
+        //[CommandMethod("fixpolylines", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        //[CommandMethod("fixpl", CommandFlags.NoPaperSpace | CommandFlags.UsePickSet | CommandFlags.Redraw)]
+        //public static void FixPolylinesCommand() {
+        //    using (var tr = new QuickTransaction()) {
+        //        var sel = Quick.SelectAll(new SelectionFilter(new TypedValue[] {
+        //            new TypedValue(Convert.ToInt32(DxfCode.Operator), "<or"),
+        //            new TypedValue(Convert.ToInt32(DxfCode.Start), "POLYLINE2D"),
+        //            new TypedValue(Convert.ToInt32(DxfCode.Start), "POLYLINE3d"),
+        //            new TypedValue(Convert.ToInt32(DxfCode.Operator), "or>"),
+        //        }));
+        //        foreach (var oid in sel?.GetObjectIds() ?? new ObjectId[0]) {
+        //            new[] {oid}.ToSelectionSet().SetSelected();
+        //            tr.Command("_.pedit","exit", ""); //CANCELCMD
+        //        }
+
+        //        tr.Commit();
+        //    }
+        //}
         /*        [CommandMethod("cccc", CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
                 public static void AddCurveCommandy() {
                     try {
@@ -705,7 +741,7 @@ namespace autonet.Forms {
 
                 using (var tr = new QuickTransaction()) {
                     var ent = (Polyline) tr.GetObject(curveId, OpenMode.ForRead, false);
-                    var c = Quick.Editor.SelectAll().Value.GetObjectIds().Select(o => tr.GetObject(o, OpenMode.ForRead, true)).Where(o=>ent.IsInsidePolygon(o.GetPosition(_e))).ToArray();
+                    var c = Quick.Editor.SelectAll().Value.GetObjectIds().Select(o => tr.GetObject(o, OpenMode.ForRead, true)).Where(o => ent.IsInsidePolygon(o.GetPosition(_e))).ToArray();
                     c.SetSelected();
                     //ent.BreakOnPoint(result.PickedPoint.ToPoint2D(), tr, true).SetSelected();
                 }
@@ -768,13 +804,9 @@ namespace autonet.Forms {
                 _objectsIds.AddRange(objids);
             }
 
-            public void Add(ObjectId oid) {
-                
-            }
+            public void Add(ObjectId oid) { }
 
-            public void AddRange(IEnumerable<ObjectId> oid) {
-                
-            }
+            public void AddRange(IEnumerable<ObjectId> oid) { }
         }
 
         //Point inside a polyline came from the Solution 2 (2d) section of this website http://paulbourke.net/geometry/insidepoly/
