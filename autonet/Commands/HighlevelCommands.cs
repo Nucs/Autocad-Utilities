@@ -110,25 +110,25 @@ namespace autonet.Forms {
         }
 */
 
-        [CommandMethod("Quicky", "asd", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void DoitCommand() {
-            _retry:
-            var result = Quick.Editor.GetSelection(new PromptSelectionOptions {SingleOnly = true, AllowDuplicates = false,}, SelectionFilters.AllowAny(EntityType.AnyPolyline, EntityType.Arc));
-            var ptr = AcadProperties.Cursor;
-            /*var result = Quick.Editor.GetEntity(options);*/
-            if (result.Status != PromptStatus.OK) {
-                if (result.Status == PromptStatus.Cancel)
-                    return;
-                goto _retry;
-            }
+        //[CommandMethod("Quicky", "asd", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //public static void DoitCommand() {
+        //    _retry:
+        //    var result = Quick.Editor.GetSelection(new PromptSelectionOptions {SingleOnly = true, AllowDuplicates = false,}, SelectionFilters.AllowAny(EntityType.AnyPolyline, EntityType.Arc));
+        //    var ptr = AcadProperties.Cursor;
+        //    /*var result = Quick.Editor.GetEntity(options);*/
+        //    if (result.Status != PromptStatus.OK) {
+        //        if (result.Status == PromptStatus.Cancel)
+        //            return;
+        //        goto _retry;
+        //    }
 
-            using (var tr = new QuickTransaction()) ;
-            ptr = OSnapping.SnapIfEnabled(ptr);
+        //    using (var tr = new QuickTransaction()) ;
+        //    ptr = OSnapping.SnapIfEnabled(ptr);
 
-            //var Quick.Editor.Get
-            var lineId = result.Value[0].ObjectId;
-            //var pickpoint = result.PickedPoint.ToPoint2D();
-        }
+        //    //var Quick.Editor.Get
+        //    var lineId = result.Value[0].ObjectId;
+        //    //var pickpoint = result.PickedPoint.ToPoint2D();
+        //}
 
         [CommandMethod("Quicky", "ws", CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void WindowSwapCommand() {
@@ -180,46 +180,49 @@ namespace autonet.Forms {
             Quick.SetSelected(rest);
         }
 
-        [CommandMethod("Quicky", "uh", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void UnHideCommand() {
-            var cmd = "uh";
-            var all = Quick.SelectAll();
-            if (all == null) {
-                Quick.WriteLine($"[{cmd}] Failed selecting All.");
-                return;
-            }
-            using (var tr = new QuickTransaction()) {
-                var rest = all.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr, true));
-                foreach (var o in rest) o.Visible = true;
-                tr.Commit();
-                Quick.ClearSelected();
-            }
-        }
+        //[CommandMethod("Quicky", "uh", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //public static void UnHideCommand() {
+        //    var cmd = "uh";
+        //    var all = Quick.SelectAll();
+        //    if (all == null) {
+        //        Quick.WriteLine($"[{cmd}] Failed selecting All.");
+        //        return;
+        //    }
+        //    using (var tr = new QuickTransaction()) {
+        //        var rest = all.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr, true));
+        //        foreach (var o in rest) o.Visible = true;
+        //        tr.Commit();
+        //        Quick.ClearSelected();
+        //    }
+        //}
 
-        [CommandMethod("Quicky", "h", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void HideCommand() {
-            var cmd = "h";
-            var imp = Quick.GetImpliedOrSelect();
-            if (imp == null) {
-                Quick.WriteLine($"[{cmd}] No objects were selected.");
-                return;
-            }
-            using (var tr = new QuickTransaction()) {
-                var rest = imp.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr, true));
-                foreach (var o in rest) o.Visible = false;
-                tr.Commit();
-                Quick.ClearSelected();
-            }
-        }
+        //[CommandMethod("Quicky", "h", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //public static void HideCommand() {
+        //    var cmd = "h";
+        //    var imp = Quick.GetImpliedOrSelect();
+        //    if (imp == null) {
+        //        Quick.WriteLine($"[{cmd}] No objects were selected.");
+        //        return;
+        //    }
+        //    using (var tr = new QuickTransaction()) {
+        //        var rest = imp.Cast<SelectedObject>().Select(o => o.ObjectId.GetObject(tr, true));
+        //        foreach (var o in rest) o.Visible = false;
+        //        tr.Commit();
+        //        Quick.ClearSelected();
+        //    }
+        //}
 
         [CommandMethod("Quicky", "w", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        [CommandMethod("Quicky", "width", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void WidthCommand() {
             var set = Quick.GetImpliedOrSelect();
-            if (set == null) {
+            if (set == null || set.Count==0) {
                 Quick.WriteLine($"[{Quick.CurrentCommand}] No objects were selected.");
                 return;
             }
+            
             using (var tr = new QuickTransaction()) {
+                var col = set.GetObjectIds().Select(o => tr.GetObject(o, true)).ToArray();
                 var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: ") {AllowNegative = false, DefaultValue = Quick.Bag.Get("[w]width", 0.4d)});
                 if (dbl.Status != PromptStatus.OK) {
                     Quick.WriteLine($"[{Quick.CurrentCommand}] Failed selecting double.");
@@ -227,51 +230,47 @@ namespace autonet.Forms {
                 }
                 var val = (double) (Quick.Bag["[w]width"] = dbl.Value);
                 //tr.Command("_.pedit", "_m", set, "_n", "_w", dbl.Value.ToString(), "");
-                foreach (var e in set.GetObjectIds().Select(o => tr.GetObject(o, true)))
-                    switch (e) {
-                        case Polyline p:
-                            p.SetGlobalWidth(val);
-                            break;
-                        case Circle c:
-                            //c.Thickness = val;
-                            break;
-                        case Arc a:
-                            //a.Thickness = val;
-                            break;
-                        case Line l:
-                            //l.Thickness = val;
-                            break;
+                for (var i = 0; i < col.Length; i++) {
+                    var e = col[i];
+                    var ee = e;
+                    if (ee is Polyline2d) {
+                        ee = ee.ConvertToPolyline(tr);
+                        col[i] = ee;
                     }
+                    if (ee is Polyline == false)
+                        continue;
+                    ((Polyline) ee).SetGlobalWidth(val);
+                }
                 tr.Commit();
             }
         }
 
-        [CommandMethod("Quicky", "f", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void FilletCommand() {
-            var cmd = "f";
-            var set = Quick.GetImpliedOrSelect();
-            if (set == null) {
-                Quick.WriteLine($"[{cmd}] No objects were selected.");
-                return;
-            }
-            using (var tr = new QuickTransaction()) {
-                var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: ") {AllowNegative = false, DefaultValue = Quick.Bag.Get($"[{cmd}]width", 0.4d)});
-                if (dbl.Status != PromptStatus.OK) {
-                    Quick.WriteLine($"[{cmd}] Failed selecting double.");
-                    return;
-                }
-                var val = (double) (Quick.Bag[$"[{cmd}]width"] = dbl.Value);
-                //tr.Command("_.pedit", "_m", set, "_n", "_w", dbl.Value.ToString(), "");
-                foreach (var e in set.GetObjectIds().Select(o => tr.GetObject(o, true)))
-                    switch (e) {
-                        case Polyline p:
-                            p.FilletAll(val);
-                            break;
-                        default: break;
-                    }
-                tr.Commit();
-            }
-        }
+        //[CommandMethod("Quicky", "f", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //public static void FilletCommand() {
+        //    var cmd = "f";
+        //    var set = Quick.GetImpliedOrSelect();
+        //    if (set == null) {
+        //        Quick.WriteLine($"[{cmd}] No objects were selected.");
+        //        return;
+        //    }
+        //    using (var tr = new QuickTransaction()) {
+        //        var dbl = Quick.Editor.GetDouble(new PromptDoubleOptions("Please select width: ") {AllowNegative = false, DefaultValue = Quick.Bag.Get($"[{cmd}]width", 0.4d)});
+        //        if (dbl.Status != PromptStatus.OK) {
+        //            Quick.WriteLine($"[{cmd}] Failed selecting double.");
+        //            return;
+        //        }
+        //        var val = (double) (Quick.Bag[$"[{cmd}]width"] = dbl.Value);
+        //        //tr.Command("_.pedit", "_m", set, "_n", "_w", dbl.Value.ToString(), "");
+        //        foreach (var e in set.GetObjectIds().Select(o => tr.GetObject(o, true)))
+        //            switch (e) {
+        //                case Polyline p:
+        //                    p.FilletAll(val);
+        //                    break;
+        //                default: break;
+        //            }
+        //        tr.Commit();
+        //    }
+        //}
         /*
         [CommandMethod("Quicky", "", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
         public static void Command() {
@@ -331,6 +330,7 @@ namespace autonet.Forms {
                 ed.WriteMessage(ex.Message + "\n" + ex.StackTrace);
             }
         }*/
+
         [CommandMethod("mreplace", CommandFlags.Session | CommandFlags.Modal | CommandFlags.UsePickSet | CommandFlags.Redraw)]
         public static void MagicReplaceCommand() {
             // objects initializing
@@ -606,7 +606,7 @@ namespace autonet.Forms {
                         tr.Transaction.TransactionManager.QueueForGraphicsFlush();
 
                         // ReSharper disable once AssignmentInConditionalExpression
-                        var ask = (bool?)Quick.AskQuestion("Reverse Direction?", false) ?? false;
+                        var ask = (bool?) Quick.AskQuestion("Reverse Direction?", false) ?? false;
                         if (ask) {
                             Settings.addcurve_direction = !(Settings.addcurve_direction as bool? ?? false);
                             setdir(Settings.addcurve_direction);
@@ -616,7 +616,7 @@ namespace autonet.Forms {
 
                         // ReSharper disable once AssignmentInConditionalExpression
                         if (Settings["addcurve_join"] = Quick.AskQuestion("Join Polylines?", (Settings["addcurve_join"]) ?? !true)) {
-                                new[] {leftpoly.Join(rightpoly, tr)}.SetSelected();
+                            new[] {leftpoly.Join(rightpoly, tr)}.SetSelected();
                         } else {
                             new[] {leftpoly, rightpoly}.SetSelected();
                         }
@@ -812,108 +812,108 @@ namespace autonet.Forms {
         //Point inside a polyline came from the Solution 2 (2d) section of this website http://paulbourke.net/geometry/insidepoly/
 
 
-        [CommandMethod("SELECTBLOCKS", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void SelectBlocksCommand() {
-            var ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
-            var db = HostApplicationServices.WorkingDatabase;
-            var tr = db.TransactionManager.StartTransaction();
-            // Start the transaction
-            try {
-                //Request name filter:
-                var psto = new PromptStringOptions("\nEnter the regex formula: ");
-                psto.AllowSpaces = true;
-                psto.DefaultValue = "*"; //old block
-                var stres = ed.GetString(psto);
-                if (stres.Status != PromptStatus.OK)
-                    return;
-                var oldblock = stres.StringResult;
-                // Build a filter list so that only
-                // block references are selected
-                var filList = new TypedValue[1] {
-                    new TypedValue((int) DxfCode.Start, "INSERT")
-                };
-                var filter = new SelectionFilter(filList);
-                var opts = new PromptSelectionOptions();
-                opts.MessageForAdding = "Select blocks to filter: ";
-                var res = Quick.GetImpliedOrSelect(opts, filter);
-                // Do nothing if selection is unsuccessful
-                if (res == null) return;
-                var selSet = res;
-                var idArray = selSet.GetObjectIds();
-                var aa = new List<ObjectId>();
-                foreach (var blkId in idArray) {
-                    var blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
-                    var btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
-                    if (WildcardMatch(btr.Name, oldblock, false)) aa.Add(blkId);
-                    btr.Dispose();
-                    /*AttributeCollection attCol = blkRef.AttributeCollection;
-                    foreach (ObjectId attId in attCol)
-                    {
-                        AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForRead);
-                        string str = ("\n  Attribute Tag: " + attRef.Tag + "\n    Attribute String: " + attRef.TextString);
-                        ed.WriteMessage(str);
-                    }*/
-                }
-                Quick.SetSelected(aa.ToArray());
-            } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
-                ed.WriteMessage("Exception: " + ex.Message);
-            } finally {
-                tr.Dispose();
-            }
-        }
+        //[CommandMethod("SELECTBLOCKS", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //public static void SelectBlocksCommand() {
+        //    var ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
+        //    var db = HostApplicationServices.WorkingDatabase;
+        //    var tr = db.TransactionManager.StartTransaction();
+        //    // Start the transaction
+        //    try {
+        //        //Request name filter:
+        //        var psto = new PromptStringOptions("\nEnter the regex formula: ");
+        //        psto.AllowSpaces = true;
+        //        psto.DefaultValue = "*"; //old block
+        //        var stres = ed.GetString(psto);
+        //        if (stres.Status != PromptStatus.OK)
+        //            return;
+        //        var oldblock = stres.StringResult;
+        //        // Build a filter list so that only
+        //        // block references are selected
+        //        var filList = new TypedValue[1] {
+        //            new TypedValue((int) DxfCode.Start, "INSERT")
+        //        };
+        //        var filter = new SelectionFilter(filList);
+        //        var opts = new PromptSelectionOptions();
+        //        opts.MessageForAdding = "Select blocks to filter: ";
+        //        var res = Quick.GetImpliedOrSelect(opts, filter);
+        //        // Do nothing if selection is unsuccessful
+        //        if (res == null) return;
+        //        var selSet = res;
+        //        var idArray = selSet.GetObjectIds();
+        //        var aa = new List<ObjectId>();
+        //        foreach (var blkId in idArray) {
+        //            var blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
+        //            var btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
+        //            if (WildcardMatch(btr.Name, oldblock, false)) aa.Add(blkId);
+        //            btr.Dispose();
+        //            /*AttributeCollection attCol = blkRef.AttributeCollection;
+        //            foreach (ObjectId attId in attCol)
+        //            {
+        //                AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForRead);
+        //                string str = ("\n  Attribute Tag: " + attRef.Tag + "\n    Attribute String: " + attRef.TextString);
+        //                ed.WriteMessage(str);
+        //            }*/
+        //        }
+        //        Quick.SetSelected(aa.ToArray());
+        //    } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+        //        ed.WriteMessage("Exception: " + ex.Message);
+        //    } finally {
+        //        tr.Dispose();
+        //    }
+        //}
 
-        [CommandMethod("LISTATT", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
-        public static void ListAttributes() {
-            var ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
-            var db = HostApplicationServices.WorkingDatabase;
-            var tr = db.TransactionManager.StartTransaction();
-            // Start the transaction
-            try {
-                //Request name filter:
-                var psto = new PromptStringOptions("\nEnter a replacement block name [*]: ");
-                psto.AllowSpaces = true;
-                psto.DefaultValue = "*"; //old block
-                var stres = ed.GetString(psto);
-                if (stres.Status != PromptStatus.OK)
-                    return;
-                var oldblock = stres.StringResult;
-                // Build a filter list so that only
-                // block references are selected
-                var filList = new TypedValue[1] {
-                    new TypedValue((int) DxfCode.Start, "INSERT")
-                };
-                var filter = new SelectionFilter(filList);
-                var opts = new PromptSelectionOptions();
-                opts.MessageForAdding = "Select blocks to filter: ";
-                var res = Quick.GetImpliedOrSelect(opts, filter);
-                // Do nothing if selection is unsuccessful
-                if (res == null) return;
-                var selSet = res;
-                var idArray = selSet.GetObjectIds();
-                var aa = new List<ObjectId>();
-                foreach (var blkId in idArray) {
-                    var blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
-                    var btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
-                    if (WildcardMatch(btr.Name, oldblock, false)) {
-                        aa.Add(blkId);
-                        ed.WriteMessage("\nBlock: " + btr.Name);
-                    }
-                    btr.Dispose();
-                    /*AttributeCollection attCol = blkRef.AttributeCollection;
-                    foreach (ObjectId attId in attCol)
-                    {
-                        AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForRead);
-                        string str = ("\n  Attribute Tag: " + attRef.Tag + "\n    Attribute String: " + attRef.TextString);
-                        ed.WriteMessage(str);
-                    }*/
-                }
-                Quick.SetSelected(aa.ToArray());
-            } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
-                ed.WriteMessage("\nException: " + ex.Message);
-            } finally {
-                tr.Dispose();
-            }
-        }
+        //[CommandMethod("LISTATT", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.NoPaperSpace)]
+        //public static void ListAttributes() {
+        //    var ed = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Editor;
+        //    var db = HostApplicationServices.WorkingDatabase;
+        //    var tr = db.TransactionManager.StartTransaction();
+        //    // Start the transaction
+        //    try {
+        //        //Request name filter:
+        //        var psto = new PromptStringOptions("\nEnter a replacement block name [*]: ");
+        //        psto.AllowSpaces = true;
+        //        psto.DefaultValue = "*"; //old block
+        //        var stres = ed.GetString(psto);
+        //        if (stres.Status != PromptStatus.OK)
+        //            return;
+        //        var oldblock = stres.StringResult;
+        //        // Build a filter list so that only
+        //        // block references are selected
+        //        var filList = new TypedValue[1] {
+        //            new TypedValue((int) DxfCode.Start, "INSERT")
+        //        };
+        //        var filter = new SelectionFilter(filList);
+        //        var opts = new PromptSelectionOptions();
+        //        opts.MessageForAdding = "Select blocks to filter: ";
+        //        var res = Quick.GetImpliedOrSelect(opts, filter);
+        //        // Do nothing if selection is unsuccessful
+        //        if (res == null) return;
+        //        var selSet = res;
+        //        var idArray = selSet.GetObjectIds();
+        //        var aa = new List<ObjectId>();
+        //        foreach (var blkId in idArray) {
+        //            var blkRef = (BlockReference) tr.GetObject(blkId, OpenMode.ForRead);
+        //            var btr = (BlockTableRecord) tr.GetObject(blkRef.BlockTableRecord, OpenMode.ForRead);
+        //            if (WildcardMatch(btr.Name, oldblock, false)) {
+        //                aa.Add(blkId);
+        //                ed.WriteMessage("\nBlock: " + btr.Name);
+        //            }
+        //            btr.Dispose();
+        //            /*AttributeCollection attCol = blkRef.AttributeCollection;
+        //            foreach (ObjectId attId in attCol)
+        //            {
+        //                AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForRead);
+        //                string str = ("\n  Attribute Tag: " + attRef.Tag + "\n    Attribute String: " + attRef.TextString);
+        //                ed.WriteMessage(str);
+        //            }*/
+        //        }
+        //        Quick.SetSelected(aa.ToArray());
+        //    } catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+        //        ed.WriteMessage("\nException: " + ex.Message);
+        //    } finally {
+        //        tr.Dispose();
+        //    }
+        //}
 
         private static bool WildcardMatch(string s, string wildcard, bool case_sensitive) {
             // Replace the * with an .* and the ? with a dot. Put ^ at the
