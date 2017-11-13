@@ -19,13 +19,12 @@ namespace autonet.Extensions {
             var mSpace = (BlockTableRecord) SymbolUtilityServices.GetBlockModelSpaceId(tr.Db).GetObject(OpenMode.ForWrite);
             if (pl2d.PolyType == Poly2dType.CubicSplinePoly || pl2d.PolyType == Poly2dType.QuadSplinePoly)
                 return null;
-            using (var pline = new Polyline()) {
-                pline.ConvertFrom(pl2d, false);
-                mSpace.AppendEntity(pline);
-                tr.AddNewlyCreatedDBObject(pline, true);
-                pl2d.Erase();
-                return pline;
-            }
+            var pline = new Polyline();
+            pline.ConvertFrom(pl2d, false);
+            mSpace.AppendEntity(pline);
+            tr.AddNewlyCreatedDBObject(pline, true);
+            pl2d.Erase();
+            return pline;
         }
 
         public static Polyline ConvertToPolyline(this QuickTransaction tr, ObjectId id) {
@@ -273,6 +272,7 @@ namespace autonet.Extensions {
                 return new Entity[0];
             } finally { }
         }
+
         /// <summary>
         ///     Shifts on line from a specific point for <paramref name="distance"/> length.<br></br>Returns true if successful, false if exceeded the limits - will return basepoint!
         /// </summary>
@@ -283,6 +283,7 @@ namespace autonet.Extensions {
         public static Tuple<Point2d, bool> OffsetToStart(this Curve ent, Point3d basepoint, double distance) {
             return OffsetToEnd(ent, basepoint.ToPoint2D(), -distance);
         }
+
         /// <summary>
         ///     Shifts on line from a specific point for <paramref name="distance"/> length.<br></br>Returns true if successful, false if exceeded the limits - will return basepoint!
         /// </summary>
@@ -301,7 +302,7 @@ namespace autonet.Extensions {
         /// <param name="basepoint">the point to offset from</param>
         /// <param name="distance">The distance to offset</param>
         /// <returns>true if successful, false if exceeded the limits - will return basepoint!</returns>
-        public static Tuple<Point2d,bool> OffsetToEnd(this Curve ent, Point3d basepoint, double distance) {
+        public static Tuple<Point2d, bool> OffsetToEnd(this Curve ent, Point3d basepoint, double distance) {
             return OffsetToEnd(ent, basepoint.ToPoint2D(), distance);
         }
 
@@ -319,12 +320,13 @@ namespace autonet.Extensions {
                 var dis = ent.GetDistAtPoint(basepoint3);
                 var extra = dis + distance;
                 var pt = ent.GetPointAtDist(extra);
-                return Tuple.Create(pt.ToPoint2D(),true);
+                return Tuple.Create(pt.ToPoint2D(), true);
             } catch (Exception e) {
-                Quick.WriteLine("\nInvalid Input, offset exceeds curve's limits.\n"+e);
-                return Tuple.Create(basepoint,false);
+                Quick.WriteLine("\nInvalid Input, offset exceeds curve's limits.\n" + e);
+                return Tuple.Create(basepoint, false);
             }
         }
+
         public static Point3d GetPosition(this DBObject obj, Point3d @default) {
             try {
                 return GetPosition(obj) ?? @default;
@@ -352,7 +354,7 @@ namespace autonet.Extensions {
                 case MLeader mLeader:
                     return mLeader.BlockPosition;
                 case Mline mline:
-                    return new LineSegment3d(mline.VertexAt(0), mline.VertexAt(mline.NumberOfVertices-1)).MidPoint;
+                    return new LineSegment3d(mline.VertexAt(0), mline.VertexAt(mline.NumberOfVertices - 1)).MidPoint;
                 case MText mText:
                     return mText.Location;
                 case PdfReference pdfReference:
@@ -447,12 +449,12 @@ namespace autonet.Extensions {
         }
 
         public static IEnumerable<DBObject> AreInsidePolyline(this IEnumerable<ObjectId> objs, QuickTransaction tr, Polyline pl) {
-            return AreInsidePolyline(objs.Select(o=>tr.GetObject(o, OpenMode.ForRead)),tr, pl);
+            return AreInsidePolyline(objs.Select(o => tr.GetObject(o, OpenMode.ForRead)), tr, pl);
         }
 
         public static IEnumerable<DBObject> AreInsidePolyline(this IEnumerable<DBObject> objs, QuickTransaction tr, Polyline pl) {
             Point3dCollection pntCol = new Point3dCollection();
-            for (int i = 0; i < pl.NumberOfVertices-1; i++) {
+            for (int i = 0; i < pl.NumberOfVertices - 1; i++) {
                 pntCol.Add(pl.GetPoint3dAt(i));
             }
 
@@ -469,14 +471,50 @@ namespace autonet.Extensions {
             if (pmtSelRes.Status == PromptStatus.OK) {
                 foreach (ObjectId objId in pmtSelRes.Value.GetObjectIds()) {
                     numOfEntsFound++;
-                    if (_objs.Any(o=>o.ObjectId.Handle.Value==objId.Handle.Value))
+                    if (_objs.Any(o => o.ObjectId.Handle.Value == objId.Handle.Value))
                         yield return tr.GetObject(objId, false);
                 }
                 Quick.Editor.WriteMessage("Entities found " + numOfEntsFound.ToString());
-            }
-            else
+            } else
                 Quick.Editor.WriteMessage("\nDid not find entities");
         }
-        
+
+        public static Polyline Join(this Curve sourcepoly, Curve addpoly, QuickTransaction tr) {
+            if (sourcepoly == null || addpoly == null) return null;
+            if (sourcepoly is Polyline2d)
+                sourcepoly = sourcepoly.ConvertToPolyline(tr);
+            if (addpoly is Polyline2d)
+                addpoly = addpoly.ConvertToPolyline(tr);
+
+            if (sourcepoly is Polyline == false)
+                throw new ArgumentNullException(nameof(sourcepoly));
+
+            if (addpoly is Polyline == false)
+                throw new ArgumentNullException(nameof(sourcepoly));
+
+            sourcepoly.UpgradeOpen();
+            sourcepoly.JoinEntity(addpoly);
+
+            addpoly.UpgradeOpen();
+            addpoly.Erase();
+
+            return (Polyline) sourcepoly;
+        }
+
+        //public static void AddVertexAt(this Curve cr, int index, Point2d at, double buldge, double startwidth, double endwidth) {
+        //    var c = (Polyline) cr;
+        //    switch (cr) {
+        //        case Polyline polyline:
+        //            polyline.AddVertexAt(index, at, buldge, startwidth, endwidth);
+        //            break;
+        //        case Polyline2d polyline2D:
+
+        //            break;
+        //        case Polyline3d polyline3D:
+        //            break;
+        //        default:
+        //            throw new InvalidOperationException("Cannot accept object of type " + cr.GetType());
+        //    }
+        //}
     }
 }
